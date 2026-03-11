@@ -1,10 +1,12 @@
 import Navbar from '@/components/landing/Navbar';
+import UrgencyBanner from '@/components/landing/UrgencyBanner';
 import Ticker from '@/components/landing/Ticker';
 import HeroSection from '@/components/landing/HeroSection';
 import MetricsBar from '@/components/landing/MetricsBar';
 import FundsSection from '@/components/landing/FundsSection';
 import StakingSection from '@/components/landing/StakingSection';
 import TiersSection from '@/components/landing/TiersSection';
+import GlobalPartnerMap from '@/components/landing/GlobalPartnerMap';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import PaymentSection from '@/components/landing/PaymentSection';
 import BriefingSection from '@/components/landing/BriefingSection';
@@ -21,11 +23,13 @@ const Index = () => {
     <div className="pb-[38px]">
       <Navbar onScrollTo={scrollTo} />
       <Ticker />
+      <UrgencyBanner />
       <HeroSection onScrollTo={scrollTo} />
       <MetricsBar />
       <FundsSection />
       <StakingSection />
       <TiersSection />
+      <GlobalPartnerMap />
       <TestimonialsSection />
       <PaymentSection />
       <BriefingSection />

@@ -35,9 +35,15 @@ const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: st
   ]},
 ];
 
+const SECTOR_CODES: Record<string, string> = {
+  'Private Equity': 'PE', 'Venture': 'VC', 'Real Estate': 'RE', 'Forex': 'FO',
+  'Commodity': 'CO', 'Income': 'IN', 'Growth': 'GR', 'Frontier': 'FR', 'Ethical': 'ET', 'General': 'GE',
+};
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState<Page>('overview');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [time, setTime] = useState('');
   const [btcPrice, setBtcPrice] = useState('BTC $—');
   const [ethPrice, setEthPrice] = useState('ETH $—');
@@ -46,6 +52,7 @@ const DashboardPage = () => {
   const [amount, setAmount] = useState('');
   const [horizon, setHorizon] = useState('12');
   const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [investLoading, setInvestLoading] = useState(false);
   const [refId, setRefId] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawWallet, setWithdrawWallet] = useState('');
@@ -57,6 +64,15 @@ const DashboardPage = () => {
   const [chatInput, setChatInput] = useState('');
   const [simAmount, setSimAmount] = useState('100000');
   const [simFund, setSimFund] = useState('12|28');
+  const [vaultSearch, setVaultSearch] = useState('');
+  const [vaultFilter, setVaultFilter] = useState('all');
+
+  // Referral code generation
+  const [referralCodes, setReferralCodes] = useState([
+    { code: 'ASP-26-PE-7k9m2x-4K', sector: 'Private Equity', uses: 3, maxUses: 10, expires: 'Dec 31, 2026' },
+  ]);
+  const [referralInput, setReferralInput] = useState('');
+  const [referralValidation, setReferralValidation] = useState<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -109,16 +125,20 @@ const DashboardPage = () => {
   const submitInvestment = () => {
     if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
     if (!amount || parseFloat(amount) < 100000) { setInvestMsg({ text: 'Minimum commitment is $100,000.', type: 'error' }); return; }
-    const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    setRefId(ref);
-    setInvestMsg({ text: `Commitment recorded. Reference: ${ref}. Send your payment to the wallet above. Your portfolio activates automatically upon confirmation.`, type: 'success' });
+    setInvestLoading(true);
+    setTimeout(() => {
+      const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+      setRefId(ref);
+      setInvestMsg({ text: `✓ Commitment recorded. Reference: ${ref}. Send your payment to the wallet above. Your portfolio activates automatically upon confirmation.`, type: 'success' });
+      setInvestLoading(false);
+    }, 1500);
   };
 
   const submitWithdrawal = () => {
     if (!withdrawAmount || parseFloat(withdrawAmount) < 10000) { setWithdrawMsg({ text: 'Minimum withdrawal is $10,000.', type: 'error' }); return; }
     if (!withdrawWallet) { setWithdrawMsg({ text: 'Please enter your wallet address.', type: 'error' }); return; }
     const ref = 'WD-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    setWithdrawMsg({ text: `Withdrawal request submitted. Reference: ${ref}. Processing within 3–5 business days.`, type: 'success' });
+    setWithdrawMsg({ text: `✓ Withdrawal request submitted. Reference: ${ref}. Processing within 3–5 business days.`, type: 'success' });
   };
 
   const sendMessage = () => {
@@ -131,6 +151,28 @@ const DashboardPage = () => {
         from: 'asp'
       }]);
     }, 1500);
+  };
+
+  const generateReferralCode = () => {
+    const sectorKeys = Object.values(SECTOR_CODES);
+    const sector = sectorKeys[Math.floor(Math.random() * sectorKeys.length)];
+    const hash = Math.random().toString(36).substr(2, 6);
+    const amount = ['4K', '10K', '25K', '50K'][Math.floor(Math.random() * 4)];
+    const code = `ASP-26-${sector}-${hash}-${amount}`;
+    setReferralCodes(prev => [...prev, { code, sector: Object.keys(SECTOR_CODES).find(k => SECTOR_CODES[k] === sector) || 'General', uses: 0, maxUses: 10, expires: 'Dec 31, 2026' }]);
+  };
+
+  const validateReferralInput = (value: string) => {
+    setReferralInput(value);
+    if (!value) { setReferralValidation(null); return; }
+    const pattern = /^ASP-\d{2}-[A-Z]{2}-[a-z0-9]{6}-\d+K$/;
+    if (pattern.test(value)) {
+      setReferralValidation('✓ Valid code — Referred by: Partner ••7291');
+    } else if (value.length > 4 && !value.startsWith('ASP-')) {
+      setReferralValidation('✗ Invalid format');
+    } else {
+      setReferralValidation(null);
+    }
   };
 
   const leaderboardData = [
@@ -146,6 +188,29 @@ const DashboardPage = () => {
     { name: 'Partner ••1167', region: 'Accra, GH', committed: 280000, tier: 'Bronze' },
   ];
 
+  // Document vault data
+  const vaultDocs = [
+    { name: 'Adams Streett General Fund — Prospectus', type: 'Fund Documents', size: '2.4 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'bronze' },
+    { name: 'African Unicorn Fund — Prospectus', type: 'Fund Documents', size: '3.1 MB', updated: 'Feb 15, 2026', isNew: false, tier: 'bronze' },
+    { name: 'Private Equity Pool — Prospectus', type: 'Fund Documents', size: '2.8 MB', updated: 'Feb 1, 2026', isNew: false, tier: 'bronze' },
+    { name: 'Frontier Fund — Prospectus', type: 'Fund Documents', size: '3.4 MB', updated: 'Jan 20, 2026', isNew: false, tier: 'bronze' },
+    { name: 'DeFi Yield Strategy — Prospectus', type: 'Fund Documents', size: '1.9 MB', updated: 'Jan 15, 2026', isNew: false, tier: 'bronze' },
+    { name: 'Halal Investment Fund — Prospectus', type: 'Fund Documents', size: '2.2 MB', updated: 'Jan 10, 2026', isNew: false, tier: 'bronze' },
+    { name: 'Q1 2026 — Subscription Agreement', type: 'Subscription Agreements', size: '1.2 MB', updated: 'Mar 5, 2026', isNew: true, tier: 'bronze' },
+    { name: 'Q4 2025 — Subscription Agreement', type: 'Subscription Agreements', size: '1.1 MB', updated: 'Dec 28, 2025', isNew: false, tier: 'bronze' },
+    { name: 'March 2026 — NAV Report', type: 'NAV Reports', size: '0.8 MB', updated: 'Mar 8, 2026', isNew: true, tier: 'bronze' },
+    { name: 'February 2026 — NAV Report', type: 'NAV Reports', size: '0.7 MB', updated: 'Feb 28, 2026', isNew: false, tier: 'bronze' },
+    { name: '2025 K-1 Tax Document', type: 'Tax Documents', size: '1.5 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'silver' },
+    { name: '2024 K-1 Tax Document', type: 'Tax Documents', size: '1.3 MB', updated: 'Mar 15, 2025', isNew: false, tier: 'silver' },
+    { name: 'Capital Call Notice — Q2 2026', type: 'Capital Call Notices', size: '0.5 MB', updated: 'Mar 10, 2026', isNew: true, tier: 'bronze' },
+    { name: 'Raw Performance Data — All Funds', type: 'Raw Data', size: '12.4 MB', updated: 'Mar 1, 2026', isNew: false, tier: 'gold' },
+  ];
+
+  const vaultDocTypes = ['all', ...new Set(vaultDocs.map(d => d.type))];
+  const filteredDocs = vaultDocs
+    .filter(d => vaultFilter === 'all' || d.type === vaultFilter)
+    .filter(d => !vaultSearch || d.name.toLowerCase().includes(vaultSearch.toLowerCase()));
+
   const projections = calcProjections();
   const sim = simCalc();
 
@@ -160,7 +225,7 @@ const DashboardPage = () => {
 
   const Card = ({ title, extra, children }: { title: string; extra?: React.ReactNode; children: React.ReactNode }) => (
     <div className="bg-s1 border border-b1 mb-5">
-      <div className="py-4 px-5 border-b border-b1 flex justify-between items-center">
+      <div className="py-4 px-5 border-b border-b1 flex justify-between items-center flex-wrap gap-2">
         <span className="font-label text-[0.68rem] text-t2 tracking-[0.18em] uppercase">{title}</span>
         {extra}
       </div>
@@ -168,47 +233,77 @@ const DashboardPage = () => {
     </div>
   );
 
+  const tierOrder = { bronze: 0, silver: 1, gold: 2 };
+  const currentTier = 'bronze';
+
   return (
     <div className="grid grid-cols-[220px_1fr] max-md:grid-cols-1 h-screen bg-void overflow-hidden">
-      {/* Sidebar */}
-      <div className="hidden md:flex flex-col bg-void border-r border-b1 overflow-y-auto overflow-x-hidden">
-        <div className="h-14 border-b border-b1 flex items-center px-5 gap-2.5 flex-shrink-0">
-          <span className="font-heading text-[1.1rem] text-gold font-normal">ASP</span>
-          <div className="flex flex-col">
-            <span className="font-label text-[0.6rem] text-t2 tracking-[0.15em] uppercase">Adams Streett</span>
-            <span className="font-label text-[0.5rem] text-t4 tracking-[0.12em] uppercase">Partners</span>
-          </div>
+      {/* Mobile sidebar toggle */}
+      <button onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+        className="hidden max-md:flex fixed top-0 left-0 right-0 h-14 bg-void border-b border-b1 items-center px-5 gap-3 z-[90]">
+        <div className="flex flex-col gap-[4px]">
+          <span className="block w-4 h-[1.5px] bg-[hsl(var(--text))]" />
+          <span className="block w-4 h-[1.5px] bg-[hsl(var(--text))]" />
+          <span className="block w-4 h-[1.5px] bg-[hsl(var(--text))]" />
         </div>
-        {SIDEBAR_ITEMS.map((g, gi) => (
-          <div key={gi}>
-            <div className="font-label text-[0.52rem] text-t4 tracking-[0.22em] uppercase py-5 px-5 pb-1.5">{g.group}</div>
-            {g.items.map(item => (
-              <div key={item.id} onClick={() => setPage(item.id)}
-                className={`font-body text-[0.78rem] py-[9px] px-5 flex items-center gap-2.5 cursor-pointer transition-all border-l-2 select-none ${page === item.id ? 'bg-s2 text-gold border-l-[hsl(var(--gold))]' : 'text-t3 border-l-transparent hover:bg-s1 hover:text-t1'}`}>
-                <span className="text-[0.7rem] w-3.5 text-center flex-shrink-0">{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
+        <span className="font-heading text-[1rem] text-gold">{PAGE_TITLES[page]}</span>
+      </button>
+
+      {/* Sidebar */}
+      <div className={`${mobileSidebarOpen ? 'fixed inset-0 z-[95] flex' : 'hidden'} md:flex md:relative flex-col bg-void border-r border-b1 overflow-y-auto overflow-x-hidden`}>
+        {mobileSidebarOpen && <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] md:hidden" onClick={() => setMobileSidebarOpen(false)} />}
+        <div className="relative z-10 w-[220px] bg-void h-full flex flex-col">
+          <div className="h-14 border-b border-b1 flex items-center px-5 gap-2.5 flex-shrink-0">
+            <span className="font-heading text-[1.1rem] text-gold font-normal">ASP</span>
+            <div className="flex flex-col">
+              <span className="font-label text-[0.6rem] text-t2 tracking-[0.15em] uppercase">Adams Streett</span>
+              <span className="font-label text-[0.5rem] text-t4 tracking-[0.12em] uppercase">Partners</span>
+            </div>
           </div>
-        ))}
-        <div className="mt-auto border-t border-b1 py-4 px-5">
-          <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Bronze</div>
-          <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">partner@example.com</div>
-          <button onClick={() => navigate('/auth')} className="font-label text-[0.62rem] text-t4 tracking-[0.12em] uppercase cursor-pointer hover:text-asp-red transition-colors bg-transparent border-none p-0">Sign Out</button>
+
+          {/* Tier Progress Bar */}
+          <div className="px-5 py-4 border-b border-b1">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Bronze</span>
+              <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase">Next: Silver</span>
+            </div>
+            <div className="w-full h-1.5 bg-s3 mb-1.5">
+              <div className="h-full bg-gold transition-all duration-500" style={{ width: '42%' }} />
+            </div>
+            <div className="font-mono text-[0.55rem] text-t4">$210K committed · Need $290K more</div>
+          </div>
+
+          {SIDEBAR_ITEMS.map((g, gi) => (
+            <div key={gi}>
+              <div className="font-label text-[0.52rem] text-t4 tracking-[0.22em] uppercase py-5 px-5 pb-1.5">{g.group}</div>
+              {g.items.map(item => (
+                <div key={item.id} onClick={() => { setPage(item.id); setMobileSidebarOpen(false); }}
+                  className={`font-body text-[0.78rem] py-[9px] px-5 flex items-center gap-2.5 cursor-pointer transition-all border-l-2 select-none min-h-[44px] ${page === item.id ? 'bg-s2 text-gold border-l-[hsl(var(--gold))]' : 'text-t3 border-l-transparent hover:bg-s1 hover:text-t1'}`}>
+                  <span className="text-[0.7rem] w-3.5 text-center flex-shrink-0">{item.icon}</span>
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="mt-auto border-t border-b1 py-4 px-5">
+            <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Bronze</div>
+            <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">partner@example.com</div>
+            <button onClick={() => navigate('/auth')} className="font-label text-[0.62rem] text-t4 tracking-[0.12em] uppercase cursor-pointer hover:text-asp-red transition-colors bg-transparent border-none p-0">Sign Out</button>
+          </div>
         </div>
       </div>
 
       {/* Main */}
-      <div className="flex flex-col overflow-hidden">
-        <div className="h-14 border-b border-b1 flex items-center justify-between px-8 flex-shrink-0 bg-void">
-          <div className="font-heading text-[1.1rem] font-normal text-t1">{PAGE_TITLES[page]}</div>
+      <div className="flex flex-col overflow-hidden max-md:mt-14">
+        <div className="h-14 border-b border-b1 flex items-center justify-between px-8 max-md:px-4 flex-shrink-0 bg-void">
+          <div className="font-heading text-[1.1rem] font-normal text-t1 max-md:hidden">{PAGE_TITLES[page]}</div>
           <div className="flex items-center gap-4">
             <div className="font-mono text-[0.7rem] text-t3"><span className="text-gold">{btcPrice}</span> &nbsp; <span className="text-gold">{ethPrice}</span></div>
-            <div className="font-mono text-[0.7rem] text-t4">{time}</div>
+            <div className="font-mono text-[0.7rem] text-t4 max-sm:hidden">{time}</div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-7 px-8">
+        <div className="flex-1 overflow-y-auto p-7 px-8 max-md:px-4">
           {/* OVERVIEW */}
           {page === 'overview' && (
             <>
@@ -219,12 +314,12 @@ const DashboardPage = () => {
                 <KPI label="Referral Earnings" value="$0" change="5% per referral" />
               </div>
               <Card title="Portfolio Intelligence Alerts" extra={<span className="font-mono text-[0.65rem] text-t3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Live</span>}>
-                <div className="border-l-2 border-l-[#3b82f6] py-3.5 px-5 border-b border-b1 flex justify-between items-center">
+                <div className="border-l-2 border-l-[#3b82f6] py-3.5 px-5 border-b border-b1 flex justify-between items-center max-md:flex-col max-md:items-start max-md:gap-2">
                   <span className="font-body text-[0.8rem] text-t2 leading-[1.6]">Complete your investor profile assessment to receive personalized fund recommendations.</span>
-                  <button onClick={() => setPage('profile')} className="font-label text-[0.62rem] text-gold tracking-[0.1em] uppercase cursor-pointer whitespace-nowrap ml-4 bg-transparent border-none p-0">Start →</button>
+                  <button onClick={() => setPage('profile')} className="font-label text-[0.62rem] text-gold tracking-[0.1em] uppercase cursor-pointer whitespace-nowrap ml-4 max-md:ml-0 bg-transparent border-none p-0">Start →</button>
                 </div>
               </Card>
-              <Card title="Active Commitments" extra={<button onClick={() => setPage('invest')} className="font-label text-[0.6rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all">+ New Position</button>}>
+              <Card title="Active Commitments" extra={<button onClick={() => setPage('invest')} className="font-label text-[0.6rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">+ New Position</button>}>
                 <div className="text-center py-15 font-heading text-base italic text-t3">No active commitments.<br />Make your first investment to get started.</div>
               </Card>
             </>
@@ -240,7 +335,10 @@ const DashboardPage = () => {
                 <KPI label="Blended APY" value="—%" cls="text-gold" />
               </div>
               <Card title="Portfolio Breakdown">
-                <div className="text-center py-15 font-heading text-base italic text-t3">No positions yet.</div>
+                <div className="text-center py-15">
+                  <div className="font-heading text-base italic text-t3 mb-2">Make your first investment to see performance data.</div>
+                  <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2 px-5 cursor-pointer hover:bg-gold hover:text-void transition-all mt-3 min-h-[40px]">Start Investing →</button>
+                </div>
               </Card>
             </>
           )}
@@ -252,19 +350,19 @@ const DashboardPage = () => {
                 <div>
                   <div className="flex flex-col gap-2 mb-5">
                     <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
-                    <select value={fundSelect} onChange={e => setFundSelect(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                    <select value={fundSelect} onChange={e => setFundSelect(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
                       <option value="">— Choose a fund —</option>
                       {FUNDS.map((f, i) => <option key={i} value={f.selectValue}>{f.selectLabel}</option>)}
                     </select>
                   </div>
                   <div className="flex flex-col gap-2 mb-5">
                     <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
-                    <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                    <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                     <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $100,000</span>
                   </div>
                   <div className="flex flex-col gap-2 mb-5">
                     <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
-                    <select value={horizon} onChange={e => setHorizon(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                    <select value={horizon} onChange={e => setHorizon(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
                       <option value="6">6 Months</option>
                       <option value="12">12 Months</option>
                       <option value="24">24 Months</option>
@@ -298,10 +396,10 @@ const DashboardPage = () => {
                     { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20' },
                     { key: 'wire', icon: '⇄', name: 'Wire Transfer', desc: 'Coming Soon', disabled: true },
                   ].map(p => (
-                    <div key={p.key} onClick={() => !p.disabled && setSelectedPayment(p.key)}
-                      className={`bg-s1 p-5 cursor-pointer transition-all ${p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'} ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
-                      <div className={`font-mono text-[1.4rem] mb-3 ${p.disabled ? 'text-t3' : 'text-gold'}`}>{p.icon}</div>
-                      <div className={`font-heading text-[0.95rem] mb-1.5 ${p.disabled ? 'text-t3' : 'text-t1'}`}>{p.name}</div>
+                    <div key={p.key} onClick={() => !('disabled' in p && p.disabled) && setSelectedPayment(p.key)}
+                      className={`bg-s1 p-5 cursor-pointer transition-all ${'disabled' in p && p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'} ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
+                      <div className={`font-mono text-[1.4rem] mb-3 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-gold'}`}>{p.icon}</div>
+                      <div className={`font-heading text-[0.95rem] mb-1.5 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-t1'}`}>{p.name}</div>
                       <p className="font-body text-[0.72rem] text-t3 leading-[1.6]">{p.desc}</p>
                     </div>
                   ))}
@@ -311,7 +409,7 @@ const DashboardPage = () => {
               <div className="bg-s2 border border-b2 p-5 mt-5">
                 <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
                 <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-3">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
-                <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all">Copy Address</button>
+                <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">Copy Address</button>
               </div>
 
               {refId && (
@@ -328,9 +426,12 @@ const DashboardPage = () => {
                 </div>
               )}
 
-              <div className="flex gap-3 mt-6">
-                <button onClick={submitInvestment} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all">Submit Commitment</button>
-                <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all">Reset</button>
+              <div className="flex gap-3 mt-6 flex-wrap">
+                <button onClick={submitInvestment} disabled={investLoading}
+                  className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
+                  {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
+                </button>
+                <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
               </div>
             </Card>
           )}
@@ -343,14 +444,17 @@ const DashboardPage = () => {
                   {[
                     { apy: '14%', name: 'Flex Pool', desc: '90 day lock period. Minimum $100,000.', tier: null },
                     { apy: '22%', name: 'Growth Pool', desc: '180 day lock period. Minimum $100,000.', tier: null },
-                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $250,000.', tier: 'Silver+ Only' },
+                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $250,000.', tier: 'Silver+ Only', badge: '⏳ Waitlist Open' },
                   ].map((p, i) => (
                     <div key={i} className="bg-s1 py-7 px-6 cursor-pointer hover:bg-s2 transition-colors">
                       <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-1">Annual Yield</div>
                       <div className="font-mono text-[2rem] text-gold mb-3">{p.apy}</div>
                       <div className="font-heading text-base text-t1 mb-1.5">{p.name}</div>
                       <p className="font-body text-[0.78rem] text-t3 leading-[1.7]">{p.desc}</p>
-                      {p.tier && <span className="font-label text-[0.55rem] text-asp-amber border border-[hsl(var(--amber))] py-0.5 px-2 inline-block mt-3">{p.tier}</span>}
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {p.tier && <span className="font-label text-[0.55rem] text-asp-amber border border-[hsl(var(--amber))] py-0.5 px-2 inline-block">{p.tier}</span>}
+                        {p.badge && <span className="font-label text-[0.55rem] text-asp-red border border-[hsl(var(--red))] py-0.5 px-2 inline-block">{p.badge}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -367,11 +471,11 @@ const DashboardPage = () => {
               <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5 mb-6">
                 <div className="flex flex-col gap-2">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Initial Amount (USD)</label>
-                  <input type="number" value={simAmount} onChange={e => setSimAmount(e.target.value)} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                  <input type="number" value={simAmount} onChange={e => setSimAmount(e.target.value)} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
-                  <select value={simFund} onChange={e => setSimFund(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                  <select value={simFund} onChange={e => setSimFund(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
                     <option value="12|28">General Fund — 12–28%</option>
                     <option value="18|40">Private Equity Pool — 18–40%</option>
                     <option value="22|55">Venture Co-Investment — 22–55%</option>
@@ -392,20 +496,57 @@ const DashboardPage = () => {
 
           {/* REFERRAL */}
           {page === 'referral' && (
-            <Card title="Your Referral Program">
-              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6 -mx-5 -mt-5">
-                <KPI label="Your Referral Code" value="ASP-DEMO1234" cls="text-gold !text-base" />
-                <KPI label="Total Referrals" value="0" />
-                <KPI label="Earnings" value="$0" cls="text-asp-green" />
-                <KPI label="Commission Rate" value="5%" change="Per referral commitment" cls="text-gold" />
-              </div>
-              <div className="bg-s2 p-6 border border-b1 mb-5">
-                <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Your Referral Link</div>
-                <div className="font-mono text-[0.8rem] text-t2 mb-3">{window.location.origin}/auth?ref=ASP-DEMO1234</div>
-                <button onClick={() => navigator.clipboard.writeText(window.location.origin + '/auth?ref=ASP-DEMO1234')} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all">Copy Link</button>
-              </div>
-              <p className="font-body text-[0.82rem] text-t3 leading-[1.8]">Earn 5% of every commitment made by partners you refer. Minimum payout $1,000. Earnings processed monthly alongside your portfolio distributions.</p>
-            </Card>
+            <>
+              <Card title="Your Referral Codes">
+                <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6 -mx-5 -mt-5">
+                  <KPI label="Total Referrals" value="0" />
+                  <KPI label="Earnings" value="$0" cls="text-asp-green" />
+                  <KPI label="Commission Rate" value="5%" change="Per referral commitment" cls="text-gold" />
+                  <KPI label="Active Codes" value={String(referralCodes.length)} cls="text-t1" />
+                </div>
+
+                {/* Existing codes */}
+                <div className="flex flex-col gap-3 mb-6">
+                  {referralCodes.map((rc, i) => (
+                    <div key={i} className="bg-s2 border border-b1 p-4">
+                      <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+                        <span className="font-mono text-[0.82rem] text-t1">{rc.code}</span>
+                        <div className="flex gap-2">
+                          <button onClick={() => navigator.clipboard.writeText(rc.code)} className="font-label text-[0.55rem] tracking-[0.1em] uppercase text-gold bg-transparent border border-gold py-1 px-3 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[32px]">Copy</button>
+                          <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${rc.code}`)} className="font-label text-[0.55rem] tracking-[0.1em] uppercase text-t3 bg-transparent border border-b2 py-1 px-3 cursor-pointer hover:border-b3 transition-all min-h-[32px]">Share</button>
+                        </div>
+                      </div>
+                      <div className="font-body text-[0.72rem] text-t3 mb-2">{rc.sector} · {rc.uses} of {rc.maxUses} uses remaining</div>
+                      <div className="w-full h-1 bg-s3 mb-1">
+                        <div className="h-full bg-gold transition-all" style={{ width: `${(rc.uses / rc.maxUses) * 100}%` }} />
+                      </div>
+                      <div className="font-mono text-[0.58rem] text-t4">Expires: {rc.expires}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <button onClick={generateReferralCode} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all mb-6 min-h-[44px]">Generate New Code ▼</button>
+
+                {/* Referral code validation */}
+                <div className="bg-s2 p-5 border border-b1">
+                  <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Validate a Referral Code</div>
+                  <input type="text" value={referralInput} onChange={e => validateReferralInput(e.target.value)}
+                    placeholder="ASP-26-PE-XXXXXX-XK" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] mb-2 min-h-[44px]" />
+                  {referralValidation && (
+                    <div className={`font-mono text-[0.72rem] ${referralValidation.startsWith('✓') ? 'text-asp-green' : 'text-asp-red'}`}>{referralValidation}</div>
+                  )}
+                </div>
+              </Card>
+
+              <Card title="How It Works">
+                <div className="flex flex-col gap-3 font-body text-[0.82rem] text-t3 leading-[1.8]">
+                  <p>When someone uses your code:</p>
+                  <div className="flex items-start gap-2"><span className="text-gold">—</span> You get 5% commission on their commitment</div>
+                  <div className="flex items-start gap-2"><span className="text-gold">—</span> They get Silver tier benefits for first 90 days</div>
+                  <div className="flex items-start gap-2"><span className="text-gold">—</span> Minimum payout $1,000. Earnings processed monthly.</div>
+                </div>
+              </Card>
+            </>
           )}
 
           {/* WITHDRAW */}
@@ -417,15 +558,15 @@ const DashboardPage = () => {
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Withdrawal Amount (USD)</label>
-                  <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} placeholder="10000" min={10000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                  <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} placeholder="10000" min={10000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Wallet Address</label>
-                  <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                  <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Currency</label>
-                  <select value={withdrawCurrency} onChange={e => setWithdrawCurrency(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                  <select value={withdrawCurrency} onChange={e => setWithdrawCurrency(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
                     <option value="btc">Bitcoin (BTC)</option>
                     <option value="eth">Ethereum (ETH)</option>
                     <option value="usdc">USDC</option>
@@ -436,7 +577,7 @@ const DashboardPage = () => {
                     {withdrawMsg.text}
                   </div>
                 )}
-                <button onClick={submitWithdrawal} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all">Submit Withdrawal Request</button>
+                <button onClick={submitWithdrawal} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px]">Submit Withdrawal Request</button>
               </Card>
               <Card title="Withdrawal History">
                 <div className="text-center py-15 font-heading text-base italic text-t3">No withdrawal history.</div>
@@ -450,7 +591,12 @@ const DashboardPage = () => {
               <div className="border border-gold bg-gold-glow p-8 text-center mb-6">
                 <div className="font-label text-[0.62rem] text-t3 tracking-[0.2em] uppercase mb-2">Partner Tier</div>
                 <div className="font-heading text-[2rem] text-gold">Bronze</div>
-                <div className="font-body text-[0.8rem] text-t3 mt-1">$500,000 away from Silver tier</div>
+                <div className="font-body text-[0.8rem] text-t3 mt-1 mb-3">$500,000 away from Silver tier</div>
+                <div className="w-full max-w-[300px] h-2 bg-s3 mx-auto mb-2">
+                  <div className="h-full bg-gold" style={{ width: '42%' }} />
+                </div>
+                <div className="font-mono text-[0.62rem] text-t4">Unlock: Apex Pool (35% APY) · Priority Processing · Early Access</div>
+                <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2 px-5 cursor-pointer hover:bg-gold hover:text-void transition-all mt-4 min-h-[40px]">View All Benefits →</button>
               </div>
               <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
                 <Card title="Partner Details">
@@ -472,9 +618,9 @@ const DashboardPage = () => {
                 <Card title="Account Security">
                   <div className="flex flex-col gap-2 mb-4">
                     <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">New Password</label>
-                    <input type="password" placeholder="Min. 8 characters" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                    <input type="password" placeholder="Min. 8 characters" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                   </div>
-                  <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all">Update Password</button>
+                  <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Update Password</button>
                 </Card>
               </div>
             </>
@@ -491,7 +637,7 @@ const DashboardPage = () => {
               </div>
               <Card title="Top Partners · Global Leaderboard" extra={<span className="font-mono text-[0.65rem] text-t3">Anonymized · Updated daily</span>}>
                 <div className="overflow-x-auto -m-5">
-                  <table className="w-full border-collapse">
+                  <table className="w-full border-collapse min-w-[600px]">
                     <thead>
                       <tr>
                         {['#', 'Partner', 'Region', 'Committed', 'Est. Returns', 'Tier'].map(h => (
@@ -508,7 +654,7 @@ const DashboardPage = () => {
                           <td className="font-mono text-[0.78rem] text-gold py-3 px-4 border-b border-b1 text-right">${p.committed.toLocaleString()}</td>
                           <td className="font-mono text-[0.78rem] text-asp-green py-3 px-4 border-b border-b1 text-right">${Math.round(p.committed * 1.15).toLocaleString()}</td>
                           <td className="py-3 px-4 border-b border-b1 text-right">
-                            <span className={`font-label text-[0.55rem] tracking-[0.1em] uppercase py-0.5 px-2 border ${p.tier === 'Gold' ? 'text-asp-green border-[hsl(var(--green))]' : p.tier === 'Silver' ? 'text-asp-teal border-[hsl(var(--teal))]' : 'text-asp-amber border-[hsl(var(--amber))]'}`}>{p.tier}</span>
+                            <span className={`font-label text-[0.55rem] tracking-[0.1em] uppercase py-0.5 px-2 border ${p.tier === 'Gold' ? 'text-gold border-gold' : p.tier === 'Silver' ? 'text-[#c0c0c0] border-[#c0c0c0]' : 'text-[#cd7f32] border-[#cd7f32]'}`}>{p.tier}</span>
                           </td>
                         </tr>
                       ))}
@@ -574,8 +720,8 @@ const DashboardPage = () => {
               </div>
               <div className="py-4 px-5 border-t border-b1 flex gap-3 flex-shrink-0">
                 <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()}
-                  placeholder="Ask about funds, returns, strategies..." className="flex-1 bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-2.5 font-body text-[0.85rem] text-t1 outline-none" />
-                <button onClick={sendMessage} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-2.5 px-6 cursor-pointer hover:bg-gold-bright transition-all">Send</button>
+                  placeholder="Ask about funds, returns, strategies..." className="flex-1 bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-2.5 font-body text-[0.85rem] text-t1 outline-none min-h-[44px]" />
+                <button onClick={sendMessage} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-2.5 px-6 cursor-pointer hover:bg-gold-bright transition-all min-h-[44px]">Send</button>
               </div>
             </div>
           )}
@@ -584,14 +730,56 @@ const DashboardPage = () => {
           {page === 'vault' && (
             <>
               <Card title="Document Vault" extra={<span className="font-mono text-[0.65rem] text-t3">Encrypted · Partner Access Only</span>}>
-                <div className="bg-s2 py-3.5 px-[18px] border-l-2 border-l-[hsl(var(--b2))] font-body text-[0.82rem] text-t3 leading-[1.7] mb-6">
-                  Documents are generated automatically as you invest and earn. All files are stored securely and accessible only to you.
+                {/* Search and filter */}
+                <div className="flex gap-3 mb-5 max-md:flex-col">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-t4 text-sm">🔍</span>
+                    <input type="text" value={vaultSearch} onChange={e => setVaultSearch(e.target.value)}
+                      placeholder="Search documents..." className="bg-s2 border border-b1 py-2.5 pl-9 pr-4 font-body text-[0.82rem] text-t1 outline-none w-full focus:border-gold transition-colors min-h-[44px]" />
+                  </div>
+                  <select value={vaultFilter} onChange={e => setVaultFilter(e.target.value)}
+                    className="bg-s2 border border-b1 py-2.5 px-4 font-label text-[0.62rem] text-t2 tracking-[0.1em] uppercase outline-none cursor-pointer min-h-[44px]">
+                    {vaultDocTypes.map(t => <option key={t} value={t}>{t === 'all' ? 'All Types' : t}</option>)}
+                  </select>
                 </div>
-                <div className="text-center py-15 font-heading text-base italic text-t3">No documents yet. Documents appear here as your portfolio grows.</div>
+
+                {/* Document groups */}
+                {filteredDocs.length === 0 ? (
+                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents match your search.</div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {filteredDocs.map((doc, i) => {
+                      const locked = tierOrder[doc.tier as keyof typeof tierOrder] > tierOrder[currentTier as keyof typeof tierOrder];
+                      return (
+                        <div key={i} className={`flex items-center justify-between py-3 px-4 border-b border-b1 last:border-b-0 ${locked ? 'opacity-50' : 'hover:bg-s2'} transition-colors`}>
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <span className="text-lg flex-shrink-0">{locked ? '🔒' : '📄'}</span>
+                            <div className="min-w-0">
+                              <div className="font-body text-[0.82rem] text-t1 truncate flex items-center gap-2">
+                                {doc.name}
+                                {doc.isNew && <span className="font-label text-[0.48rem] text-gold border border-gold py-0 px-1.5 tracking-[0.1em] uppercase flex-shrink-0">New</span>}
+                              </div>
+                              <div className="font-mono text-[0.62rem] text-t4 mt-0.5">
+                                PDF · {doc.size} · Updated {doc.updated}
+                                {locked && <span className="text-asp-amber ml-2">· {doc.tier === 'silver' ? 'Silver' : 'Gold'}+ Only</span>}
+                              </div>
+                            </div>
+                          </div>
+                          {!locked && (
+                            <div className="flex gap-2 flex-shrink-0 ml-3">
+                              <button className="font-label text-[0.52rem] tracking-[0.1em] uppercase text-gold bg-transparent border border-gold py-1 px-3 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[32px]">Download</button>
+                              <button className="font-label text-[0.52rem] tracking-[0.1em] uppercase text-t3 bg-transparent border border-b2 py-1 px-3 cursor-pointer hover:border-b3 transition-all min-h-[32px] max-sm:hidden">Preview</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </Card>
               <Card title="Generate Partner Certificate">
                 <p className="font-body text-[0.85rem] text-t3 leading-[1.75] mb-5">Generate your official Adams Streett Partners membership certificate displaying your tier, partner ID, and membership date.</p>
-                <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all">Generate Certificate</button>
+                <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px]">Generate Certificate</button>
               </Card>
             </>
           )}

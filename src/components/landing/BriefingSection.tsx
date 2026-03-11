@@ -25,19 +25,45 @@ const BriefingSection = () => {
 
   return (
     <section className="py-24 px-[52px] max-lg:px-7 border-b border-b1">
-      <div className="grid grid-cols-[1fr_auto] max-lg:grid-cols-1 gap-20 items-center">
+      <div className="grid grid-cols-[1fr_auto] max-lg:grid-cols-1 gap-16 items-start">
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-[7px] h-[7px] rounded-full bg-[hsl(var(--red))] animate-livepulse" />
             <span className="font-label text-[0.62rem] text-asp-red tracking-[0.18em] uppercase">Live · Monthly Session</span>
           </div>
-          <div className="font-label text-[0.62rem] text-gold tracking-[0.25em] uppercase mb-3.5">Monthly Investor Briefing</div>
+          <div className="font-label text-[0.62rem] text-gold tracking-[0.25em] uppercase mb-3.5">🎙️ Monthly Investor Briefing</div>
           <h2 className="font-heading text-[clamp(1.8rem,2.8vw,2.8rem)] font-light tracking-[-0.015em] leading-[1.15] mb-5 text-t1">Stay Ahead of<br />Every Market</h2>
           <div className="w-12 h-px bg-gold mb-4" />
-          <p className="text-[0.9rem] text-t3 leading-[1.9] max-w-[540px] mb-8">Exclusive monthly sessions for active partners. Fund performance review, new product announcements, market outlook and partner Q&A. Limited seats per session.</p>
-          <Link to="/auth" className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-[15px] px-11 cursor-pointer hover:bg-gold-bright transition-all no-underline inline-block">Reserve Your Seat</Link>
+          <p className="text-[0.9rem] text-t3 leading-[1.9] max-w-[540px] mb-6">Exclusive monthly sessions for active partners. Fund performance review, new product announcements, market outlook and partner Q&A. Limited seats per session.</p>
+
+          {/* Speakers */}
+          <div className="bg-s1 border border-b1 p-5 mb-8 max-w-[480px]">
+            <div className="font-label text-[0.58rem] text-t4 tracking-[0.18em] uppercase mb-3">Speakers</div>
+            <div className="flex flex-col gap-3">
+              {[
+                { name: 'Michael Adams, CIO', topic: 'Market Outlook' },
+                { name: 'Sarah Streett, Partner', topic: 'New Fund Launch' },
+                { name: 'Guest: African Unicorn Founder', topic: 'Secret Announcement' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-gold font-mono text-[0.7rem]">—</span>
+                  <div>
+                    <span className="font-body text-[0.82rem] text-t1">{s.name}</span>
+                    <span className="font-body text-[0.72rem] text-t3 ml-2">· {s.topic}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link to="/auth" className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-[15px] px-11 cursor-pointer hover:bg-gold-bright transition-all no-underline inline-block min-h-[48px]">Secure Your Seat →</Link>
+            <span className="font-mono text-[0.68rem] text-t3">247 registered · Only 53 spots remaining</span>
+          </div>
         </div>
+
         <div className="flex flex-col items-center gap-5">
+          <div className="font-label text-[0.58rem] text-t4 tracking-[0.15em] uppercase mb-2">Next: April 1, 2026 · 15:00 GMT</div>
           <div className="flex items-center gap-3">
             {[
               { val: pad(countdown.d), label: 'Days' },
@@ -54,7 +80,7 @@ const BriefingSection = () => {
               </div>
             ))}
           </div>
-          <div className="font-mono text-[0.7rem] text-t3 text-center">247 partners registered · Q2 2026 Session<br />Next: April 1, 2026 · 15:00 GMT</div>
+          <div className="font-mono text-[0.7rem] text-t3 text-center mt-2">Q2 2026 Session</div>
         </div>
       </div>
     </section>

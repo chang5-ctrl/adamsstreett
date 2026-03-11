@@ -122,6 +122,16 @@
   .tabular-nums { font-variant-numeric: tabular-nums; }
 }
 
+/* Hero gold gradient text */
+.hero-gold-gradient {
+  background: linear-gradient(135deg, hsl(43 55% 54%), hsl(43 70% 66%), hsl(43 55% 54%));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
 /* Grain overlay */
 body::after {
   content: '';
@@ -143,6 +153,10 @@ body::after {
   to { opacity: 1; }
 }
 @keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes tickerSlow {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
@@ -170,6 +184,27 @@ body::after {
 .animate-fadeIn { animation: fadeIn 1000ms ease 400ms both; }
 .animate-ticker { animation: ticker 60s linear infinite; }
 .animate-ticker:hover { animation-play-state: paused; }
+.animate-ticker-slow { animation: tickerSlow 90s linear infinite; }
+.animate-ticker-slow:hover { animation-play-state: paused; }
 .animate-livepulse { animation: livepulse 1.8s ease infinite; }
 .animate-pulse-dot { animation: pulse-dot 2s infinite; }
 .animate-spin { animation: spin 600ms linear infinite; }
+
+/* Button hover lift effect */
+.hover\:bg-gold-bright:hover {
+  background-color: hsl(var(--gold-bright));
+  box-shadow: 0 4px 20px -4px hsl(var(--gold) / 0.3);
+  transform: translateY(-1px);
+}
+
+/* Gold underline animation for form fields */
+input:focus, select:focus {
+  transition: border-color 0.3s ease;
+}
+
+/* Mobile ticker speed */
+@media (max-width: 768px) {
+  .animate-ticker {
+    animation: ticker 90s linear infinite;
+  }
+}

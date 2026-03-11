@@ -39,9 +39,28 @@ const Footer = ({ onScrollTo }: FooterProps) => (
         </div>
       </div>
     </div>
-    <div className="border-t border-b1 pt-7 flex justify-between items-start gap-10 max-sm:flex-col max-sm:gap-5">
-      <p className="text-[0.7rem] text-t4 leading-[1.75] max-w-[640px]">All projected return figures are illustrative targets based on historical performance and strategy models. Past performance does not guarantee future results. All investments carry risk including possible loss of principal. Adams Streett Partners does not solicit or accept investments from US persons. This platform is available to accredited investors only. Adams Streett Partners is not a registered investment adviser. Nothing on this platform constitutes investment advice.</p>
-      <div className="font-mono text-[0.62rem] text-t4 whitespace-nowrap text-right">© 2026 Adams Streett Partners<br />Private Investment</div>
+
+    {/* Regulatory Footer */}
+    <div className="border-t border-b1 pt-7 mb-6">
+      <div className="flex flex-wrap gap-x-8 gap-y-2 mb-5">
+        <span className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase">🏛️ Accredited Investors Only</span>
+        <span className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase">🌍 Not Available to US Persons</span>
+        <span className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase">🔒 SSL Encrypted</span>
+        <span className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase">✓ Audited by Deloitte</span>
+      </div>
+    </div>
+
+    <div className="flex justify-between items-start gap-10 max-sm:flex-col max-sm:gap-5">
+      <div>
+        <p className="text-[0.7rem] text-t4 leading-[1.75] max-w-[640px] mb-4">Adams Streett Partners LLC is a private investment platform. All investments involve risk including loss of principal. Past performance does not guarantee future results. All projected return figures are illustrative targets based on historical performance and strategy models. Adams Streett Partners does not solicit or accept investments from US persons. This platform is available to accredited investors only. Adams Streett Partners is not a registered investment adviser. Nothing on this platform constitutes investment advice.</p>
+        <div className="flex gap-6 flex-wrap">
+          <Link to="/auth" className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase no-underline hover:text-t2 transition-colors">Terms</Link>
+          <Link to="/auth" className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase no-underline hover:text-t2 transition-colors">Privacy</Link>
+          <Link to="/auth" className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase no-underline hover:text-t2 transition-colors">Contact</Link>
+          <Link to="/auth" className="font-label text-[0.58rem] text-t3 tracking-[0.1em] uppercase no-underline hover:text-t2 transition-colors">Regulatory Disclosures</Link>
+        </div>
+      </div>
+      <div className="font-mono text-[0.62rem] text-t4 whitespace-nowrap text-right">© 2026 Adams Streett Partners<br />Private Investment<br />All rights reserved.</div>
     </div>
   </footer>
 );
