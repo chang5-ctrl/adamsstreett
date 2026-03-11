@@ -1,0 +1,604 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FUNDS, WALLETS } from '@/data/funds';
+
+type Page = 'overview' | 'portfolio' | 'invest' | 'staking' | 'returns' | 'referral' | 'withdraw' | 'profile' | 'leaderboard' | 'network' | 'concierge' | 'vault';
+
+const PAGE_TITLES: Record<Page, string> = {
+  overview: 'Overview', portfolio: 'Portfolio Analytics', invest: 'New Investment', staking: 'Staking Pools',
+  returns: 'Returns Simulator', referral: 'Referral Program', withdraw: 'Withdrawal', profile: 'Partner Profile',
+  leaderboard: 'Partner Leaderboard', network: 'Global Network', concierge: 'ASP Intelligence', vault: 'Document Vault',
+};
+
+const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: string }[] }[] = [
+  { group: 'Overview', items: [
+    { id: 'overview', label: 'Dashboard', icon: '◫' },
+    { id: 'portfolio', label: 'Portfolio', icon: '⟋' },
+  ]},
+  { group: 'Capital', items: [
+    { id: 'invest', label: 'Invest', icon: '+' },
+    { id: 'staking', label: 'Staking', icon: '★' },
+    { id: 'withdraw', label: 'Withdraw', icon: '⇄' },
+  ]},
+  { group: 'Intelligence', items: [
+    { id: 'returns', label: 'Returns', icon: '▮' },
+    { id: 'referral', label: 'Referral', icon: '⊕' },
+  ]},
+  { group: 'Community', items: [
+    { id: 'leaderboard', label: 'Leaderboard', icon: '▯' },
+    { id: 'network', label: 'Network', icon: '◉' },
+    { id: 'concierge', label: 'ASP Intelligence', icon: '◬' },
+  ]},
+  { group: 'Account', items: [
+    { id: 'vault', label: 'Vault', icon: '▣' },
+    { id: 'profile', label: 'Profile', icon: '◎' },
+  ]},
+];
+
+const DashboardPage = () => {
+  const navigate = useNavigate();
+  const [page, setPage] = useState<Page>('overview');
+  const [time, setTime] = useState('');
+  const [btcPrice, setBtcPrice] = useState('BTC $—');
+  const [ethPrice, setEthPrice] = useState('ETH $—');
+  const [selectedPayment, setSelectedPayment] = useState('btc');
+  const [fundSelect, setFundSelect] = useState('');
+  const [amount, setAmount] = useState('');
+  const [horizon, setHorizon] = useState('12');
+  const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [refId, setRefId] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawWallet, setWithdrawWallet] = useState('');
+  const [withdrawCurrency, setWithdrawCurrency] = useState('btc');
+  const [withdrawMsg, setWithdrawMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [chatMessages, setChatMessages] = useState<{ text: string; from: 'user' | 'asp' }[]>([
+    { text: 'Welcome to your private investment concierge. I can help you understand our 21 funds, optimize your portfolio allocation, explain staking strategies, calculate returns, and answer any questions about the platform. How can I assist you today?', from: 'asp' },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [simAmount, setSimAmount] = useState('100000');
+  const [simFund, setSimFund] = useState('12|28');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' GMT');
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd');
+        const d = await r.json();
+        if (d.bitcoin) setBtcPrice(`BTC $${d.bitcoin.usd.toLocaleString()}`);
+        if (d.ethereum) setEthPrice(`ETH $${d.ethereum.usd.toLocaleString()}`);
+      } catch {}
+    };
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const calcProjections = useCallback(() => {
+    if (!fundSelect || !amount || parseFloat(amount) < 100000) return { cons: '—', agg: '—' };
+    const parts = fundSelect.split('|');
+    const rates = parts[1].split('-');
+    const consRate = parseFloat(rates[0]) / 100;
+    const aggRate = parseFloat(rates[1]) / 100;
+    const years = parseInt(horizon) / 12;
+    return {
+      cons: '$' + Math.round(parseFloat(amount) * Math.pow(1 + consRate, years)).toLocaleString(),
+      agg: '$' + Math.round(parseFloat(amount) * Math.pow(1 + aggRate, years)).toLocaleString(),
+    };
+  }, [fundSelect, amount, horizon]);
+
+  const simCalc = useCallback(() => {
+    const a = parseFloat(simAmount) || 100000;
+    const rates = simFund.split('|');
+    const cons = parseFloat(rates[0]) / 100;
+    const agg = parseFloat(rates[1]) / 100;
+    const fmt = (v: number) => '$' + Math.round(v).toLocaleString();
+    return {
+      y1c: fmt(a * Math.pow(1 + cons, 1)),
+      y3c: fmt(a * Math.pow(1 + cons, 3)),
+      y1a: fmt(a * Math.pow(1 + agg, 1)),
+      y5a: fmt(a * Math.pow(1 + agg, 5)),
+    };
+  }, [simAmount, simFund]);
+
+  const submitInvestment = () => {
+    if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
+    if (!amount || parseFloat(amount) < 100000) { setInvestMsg({ text: 'Minimum commitment is $100,000.', type: 'error' }); return; }
+    const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    setRefId(ref);
+    setInvestMsg({ text: `Commitment recorded. Reference: ${ref}. Send your payment to the wallet above. Your portfolio activates automatically upon confirmation.`, type: 'success' });
+  };
+
+  const submitWithdrawal = () => {
+    if (!withdrawAmount || parseFloat(withdrawAmount) < 10000) { setWithdrawMsg({ text: 'Minimum withdrawal is $10,000.', type: 'error' }); return; }
+    if (!withdrawWallet) { setWithdrawMsg({ text: 'Please enter your wallet address.', type: 'error' }); return; }
+    const ref = 'WD-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    setWithdrawMsg({ text: `Withdrawal request submitted. Reference: ${ref}. Processing within 3–5 business days.`, type: 'success' });
+  };
+
+  const sendMessage = () => {
+    if (!chatInput.trim()) return;
+    setChatMessages(prev => [...prev, { text: chatInput, from: 'user' }]);
+    setChatInput('');
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, {
+        text: 'Thank you for your inquiry. Our team of investment specialists can assist you with fund selection, portfolio optimization, and staking strategies. For detailed fund analysis, please explore the Returns Simulator or contact us at adamsstreettspartners@gmail.com.',
+        from: 'asp'
+      }]);
+    }, 1500);
+  };
+
+  const leaderboardData = [
+    { name: 'Partner ••7291', region: 'Dubai, UAE', committed: 1850000, tier: 'Gold' },
+    { name: 'Partner ••4438', region: 'Lagos, NG', committed: 1200000, tier: 'Gold' },
+    { name: 'Partner ••9912', region: 'Riyadh, SA', committed: 980000, tier: 'Silver' },
+    { name: 'Partner ••3341', region: 'London, UK', committed: 850000, tier: 'Silver' },
+    { name: 'Partner ••6672', region: 'Singapore', committed: 720000, tier: 'Silver' },
+    { name: 'Partner ••8821', region: 'Nairobi, KE', committed: 650000, tier: 'Silver' },
+    { name: 'Partner ••2290', region: 'Zurich, CH', committed: 550000, tier: 'Silver' },
+    { name: 'Partner ••5519', region: 'Frankfurt, DE', committed: 480000, tier: 'Bronze' },
+    { name: 'Partner ••7743', region: 'Abu Dhabi, UAE', committed: 350000, tier: 'Bronze' },
+    { name: 'Partner ••1167', region: 'Accra, GH', committed: 280000, tier: 'Bronze' },
+  ];
+
+  const projections = calcProjections();
+  const sim = simCalc();
+
+  const KPI = ({ label, value, change, cls = '' }: { label: string; value: string; change?: string; cls?: string }) => (
+    <div className="bg-s1 p-5">
+      <div className="font-label text-[0.58rem] text-t3 tracking-[0.15em] uppercase">{label}</div>
+      <div className="h-px bg-[hsl(var(--b1))] my-2" />
+      <div className={`font-mono text-[1.5rem] tabular-nums text-t1 ${cls}`}>{value}</div>
+      {change && <div className="font-mono text-[0.68rem] mt-1 text-asp-green">{change}</div>}
+    </div>
+  );
+
+  const Card = ({ title, extra, children }: { title: string; extra?: React.ReactNode; children: React.ReactNode }) => (
+    <div className="bg-s1 border border-b1 mb-5">
+      <div className="py-4 px-5 border-b border-b1 flex justify-between items-center">
+        <span className="font-label text-[0.68rem] text-t2 tracking-[0.18em] uppercase">{title}</span>
+        {extra}
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-[220px_1fr] max-md:grid-cols-1 h-screen bg-void overflow-hidden">
+      {/* Sidebar */}
+      <div className="hidden md:flex flex-col bg-void border-r border-b1 overflow-y-auto overflow-x-hidden">
+        <div className="h-14 border-b border-b1 flex items-center px-5 gap-2.5 flex-shrink-0">
+          <span className="font-heading text-[1.1rem] text-gold font-normal">ASP</span>
+          <div className="flex flex-col">
+            <span className="font-label text-[0.6rem] text-t2 tracking-[0.15em] uppercase">Adams Streett</span>
+            <span className="font-label text-[0.5rem] text-t4 tracking-[0.12em] uppercase">Partners</span>
+          </div>
+        </div>
+        {SIDEBAR_ITEMS.map((g, gi) => (
+          <div key={gi}>
+            <div className="font-label text-[0.52rem] text-t4 tracking-[0.22em] uppercase py-5 px-5 pb-1.5">{g.group}</div>
+            {g.items.map(item => (
+              <div key={item.id} onClick={() => setPage(item.id)}
+                className={`font-body text-[0.78rem] py-[9px] px-5 flex items-center gap-2.5 cursor-pointer transition-all border-l-2 select-none ${page === item.id ? 'bg-s2 text-gold border-l-[hsl(var(--gold))]' : 'text-t3 border-l-transparent hover:bg-s1 hover:text-t1'}`}>
+                <span className="text-[0.7rem] w-3.5 text-center flex-shrink-0">{item.icon}</span>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        ))}
+        <div className="mt-auto border-t border-b1 py-4 px-5">
+          <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Bronze</div>
+          <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">partner@example.com</div>
+          <button onClick={() => navigate('/auth')} className="font-label text-[0.62rem] text-t4 tracking-[0.12em] uppercase cursor-pointer hover:text-asp-red transition-colors bg-transparent border-none p-0">Sign Out</button>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div className="flex flex-col overflow-hidden">
+        <div className="h-14 border-b border-b1 flex items-center justify-between px-8 flex-shrink-0 bg-void">
+          <div className="font-heading text-[1.1rem] font-normal text-t1">{PAGE_TITLES[page]}</div>
+          <div className="flex items-center gap-4">
+            <div className="font-mono text-[0.7rem] text-t3"><span className="text-gold">{btcPrice}</span> &nbsp; <span className="text-gold">{ethPrice}</span></div>
+            <div className="font-mono text-[0.7rem] text-t4">{time}</div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-7 px-8">
+          {/* OVERVIEW */}
+          {page === 'overview' && (
+            <>
+              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6">
+                <KPI label="Portfolio Value" value="$0" change="No active positions" />
+                <KPI label="Yield Earned" value="$0" change="Compounding daily" />
+                <KPI label="Active Positions" value="0" change="Bronze Tier" cls="text-gold" />
+                <KPI label="Referral Earnings" value="$0" change="5% per referral" />
+              </div>
+              <Card title="Portfolio Intelligence Alerts" extra={<span className="font-mono text-[0.65rem] text-t3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Live</span>}>
+                <div className="border-l-2 border-l-[#3b82f6] py-3.5 px-5 border-b border-b1 flex justify-between items-center">
+                  <span className="font-body text-[0.8rem] text-t2 leading-[1.6]">Complete your investor profile assessment to receive personalized fund recommendations.</span>
+                  <button onClick={() => setPage('profile')} className="font-label text-[0.62rem] text-gold tracking-[0.1em] uppercase cursor-pointer whitespace-nowrap ml-4 bg-transparent border-none p-0">Start →</button>
+                </div>
+              </Card>
+              <Card title="Active Commitments" extra={<button onClick={() => setPage('invest')} className="font-label text-[0.6rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all">+ New Position</button>}>
+                <div className="text-center py-15 font-heading text-base italic text-t3">No active commitments.<br />Make your first investment to get started.</div>
+              </Card>
+            </>
+          )}
+
+          {/* PORTFOLIO */}
+          {page === 'portfolio' && (
+            <>
+              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6">
+                <KPI label="Total Value" value="$0" />
+                <KPI label="Total Committed" value="$0" />
+                <KPI label="Total Growth" value="$0" cls="text-asp-green" />
+                <KPI label="Blended APY" value="—%" cls="text-gold" />
+              </div>
+              <Card title="Portfolio Breakdown">
+                <div className="text-center py-15 font-heading text-base italic text-t3">No positions yet.</div>
+              </Card>
+            </>
+          )}
+
+          {/* INVEST */}
+          {page === 'invest' && (
+            <Card title="New Investment Commitment">
+              <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
+                <div>
+                  <div className="flex flex-col gap-2 mb-5">
+                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
+                    <select value={fundSelect} onChange={e => setFundSelect(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                      <option value="">— Choose a fund —</option>
+                      {FUNDS.map((f, i) => <option key={i} value={f.selectValue}>{f.selectLabel}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-2 mb-5">
+                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
+                    <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                    <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $100,000</span>
+                  </div>
+                  <div className="flex flex-col gap-2 mb-5">
+                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
+                    <select value={horizon} onChange={e => setHorizon(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                      <option value="6">6 Months</option>
+                      <option value="12">12 Months</option>
+                      <option value="24">24 Months</option>
+                      <option value="36">36 Months</option>
+                      <option value="60">60 Months</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2 block">Projected Returns</label>
+                  <div className="bg-s2 p-5 border border-b1">
+                    <div className="mb-4">
+                      <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Conservative Projection</div>
+                      <div className="font-mono text-[1.2rem] text-t1">{projections.cons}</div>
+                    </div>
+                    <div>
+                      <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Aggressive Projection</div>
+                      <div className="font-mono text-[1.2rem] text-gold">{projections.agg}</div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-b1 font-body text-[0.7rem] text-t4 leading-[1.6]">Projections are illustrative targets. All investments involve risk.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-4 mt-6">
+                <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Payment Method</div>
+                <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
+                  {[
+                    { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected' },
+                    { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected' },
+                    { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20' },
+                    { key: 'wire', icon: '⇄', name: 'Wire Transfer', desc: 'Coming Soon', disabled: true },
+                  ].map(p => (
+                    <div key={p.key} onClick={() => !p.disabled && setSelectedPayment(p.key)}
+                      className={`bg-s1 p-5 cursor-pointer transition-all ${p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'} ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
+                      <div className={`font-mono text-[1.4rem] mb-3 ${p.disabled ? 'text-t3' : 'text-gold'}`}>{p.icon}</div>
+                      <div className={`font-heading text-[0.95rem] mb-1.5 ${p.disabled ? 'text-t3' : 'text-t1'}`}>{p.name}</div>
+                      <p className="font-body text-[0.72rem] text-t3 leading-[1.6]">{p.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-s2 border border-b2 p-5 mt-5">
+                <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
+                <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-3">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
+                <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all">Copy Address</button>
+              </div>
+
+              {refId && (
+                <div className="mt-4">
+                  <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Your Reference ID</div>
+                  <div className="bg-s2 border border-b1 py-3 px-4 font-mono text-[0.82rem] text-t2">{refId}</div>
+                  <p className="font-body text-[0.78rem] text-t3 leading-[1.7] mt-2">Include this reference ID in your transaction memo. Our system will automatically match your payment.</p>
+                </div>
+              )}
+
+              {investMsg && (
+                <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${investMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
+                  {investMsg.text}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-6">
+                <button onClick={submitInvestment} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all">Submit Commitment</button>
+                <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all">Reset</button>
+              </div>
+            </Card>
+          )}
+
+          {/* STAKING */}
+          {page === 'staking' && (
+            <>
+              <Card title="Staking Pools">
+                <div className="grid grid-cols-3 max-md:grid-cols-1 gap-px bg-[hsl(var(--b1))] -m-5">
+                  {[
+                    { apy: '14%', name: 'Flex Pool', desc: '90 day lock period. Minimum $100,000.', tier: null },
+                    { apy: '22%', name: 'Growth Pool', desc: '180 day lock period. Minimum $100,000.', tier: null },
+                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $250,000.', tier: 'Silver+ Only' },
+                  ].map((p, i) => (
+                    <div key={i} className="bg-s1 py-7 px-6 cursor-pointer hover:bg-s2 transition-colors">
+                      <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-1">Annual Yield</div>
+                      <div className="font-mono text-[2rem] text-gold mb-3">{p.apy}</div>
+                      <div className="font-heading text-base text-t1 mb-1.5">{p.name}</div>
+                      <p className="font-body text-[0.78rem] text-t3 leading-[1.7]">{p.desc}</p>
+                      {p.tier && <span className="font-label text-[0.55rem] text-asp-amber border border-[hsl(var(--amber))] py-0.5 px-2 inline-block mt-3">{p.tier}</span>}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <Card title="Active Staking Positions">
+                <div className="text-center py-15 font-heading text-base italic text-t3">No active staking positions.</div>
+              </Card>
+            </>
+          )}
+
+          {/* RETURNS */}
+          {page === 'returns' && (
+            <Card title="Growth Simulator">
+              <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5 mb-6">
+                <div className="flex flex-col gap-2">
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Initial Amount (USD)</label>
+                  <input type="number" value={simAmount} onChange={e => setSimAmount(e.target.value)} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
+                  <select value={simFund} onChange={e => setSimFund(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                    <option value="12|28">General Fund — 12–28%</option>
+                    <option value="18|40">Private Equity Pool — 18–40%</option>
+                    <option value="22|55">Venture Co-Investment — 22–55%</option>
+                    <option value="20|100">Frontier Fund — 20–100%+</option>
+                    <option value="22|80">African Unicorn Fund — 22–80%</option>
+                    <option value="12|30">Halal Fund — 12–30%</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
+                <KPI label="Year 1 (Conservative)" value={sim.y1c} cls="text-asp-green" />
+                <KPI label="Year 3 (Conservative)" value={sim.y3c} cls="text-asp-green" />
+                <KPI label="Year 1 (Aggressive)" value={sim.y1a} cls="text-gold" />
+                <KPI label="Year 5 (Aggressive)" value={sim.y5a} cls="text-gold" />
+              </div>
+            </Card>
+          )}
+
+          {/* REFERRAL */}
+          {page === 'referral' && (
+            <Card title="Your Referral Program">
+              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6 -mx-5 -mt-5">
+                <KPI label="Your Referral Code" value="ASP-DEMO1234" cls="text-gold !text-base" />
+                <KPI label="Total Referrals" value="0" />
+                <KPI label="Earnings" value="$0" cls="text-asp-green" />
+                <KPI label="Commission Rate" value="5%" change="Per referral commitment" cls="text-gold" />
+              </div>
+              <div className="bg-s2 p-6 border border-b1 mb-5">
+                <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Your Referral Link</div>
+                <div className="font-mono text-[0.8rem] text-t2 mb-3">{window.location.origin}/auth?ref=ASP-DEMO1234</div>
+                <button onClick={() => navigator.clipboard.writeText(window.location.origin + '/auth?ref=ASP-DEMO1234')} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all">Copy Link</button>
+              </div>
+              <p className="font-body text-[0.82rem] text-t3 leading-[1.8]">Earn 5% of every commitment made by partners you refer. Minimum payout $1,000. Earnings processed monthly alongside your portfolio distributions.</p>
+            </Card>
+          )}
+
+          {/* WITHDRAW */}
+          {page === 'withdraw' && (
+            <>
+              <Card title="Withdrawal Request">
+                <div className="bg-s2 py-4 px-4 border-l-2 border-l-[hsl(var(--amber))] mb-6 font-body text-[0.82rem] text-t2 leading-[1.7]">
+                  Withdrawal requests are processed within 3–5 business days. Minimum withdrawal $10,000. Funds returned to original payment wallet.
+                </div>
+                <div className="flex flex-col gap-2 mb-5">
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Withdrawal Amount (USD)</label>
+                  <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} placeholder="10000" min={10000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                </div>
+                <div className="flex flex-col gap-2 mb-5">
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Wallet Address</label>
+                  <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                </div>
+                <div className="flex flex-col gap-2 mb-5">
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Currency</label>
+                  <select value={withdrawCurrency} onChange={e => setWithdrawCurrency(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer">
+                    <option value="btc">Bitcoin (BTC)</option>
+                    <option value="eth">Ethereum (ETH)</option>
+                    <option value="usdc">USDC</option>
+                  </select>
+                </div>
+                {withdrawMsg && (
+                  <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${withdrawMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
+                    {withdrawMsg.text}
+                  </div>
+                )}
+                <button onClick={submitWithdrawal} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all">Submit Withdrawal Request</button>
+              </Card>
+              <Card title="Withdrawal History">
+                <div className="text-center py-15 font-heading text-base italic text-t3">No withdrawal history.</div>
+              </Card>
+            </>
+          )}
+
+          {/* PROFILE */}
+          {page === 'profile' && (
+            <>
+              <div className="border border-gold bg-gold-glow p-8 text-center mb-6">
+                <div className="font-label text-[0.62rem] text-t3 tracking-[0.2em] uppercase mb-2">Partner Tier</div>
+                <div className="font-heading text-[2rem] text-gold">Bronze</div>
+                <div className="font-body text-[0.8rem] text-t3 mt-1">$500,000 away from Silver tier</div>
+              </div>
+              <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
+                <Card title="Partner Details">
+                  <div className="space-y-3">
+                    {[
+                      { l: 'Full Name', v: 'Demo Partner' },
+                      { l: 'Email', v: 'partner@example.com' },
+                      { l: 'Country', v: '—' },
+                      { l: 'Member Since', v: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+                      { l: 'Risk Profile', v: 'Not assessed' },
+                    ].map((r, i) => (
+                      <div key={i} className="flex justify-between py-2 border-b border-b1 last:border-b-0">
+                        <span className="font-body text-[0.82rem] text-t1">{r.l}</span>
+                        <span className="font-mono text-[0.78rem] text-t2">{r.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+                <Card title="Account Security">
+                  <div className="flex flex-col gap-2 mb-4">
+                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">New Password</label>
+                    <input type="password" placeholder="Min. 8 characters" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))]" />
+                  </div>
+                  <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all">Update Password</button>
+                </Card>
+              </div>
+            </>
+          )}
+
+          {/* LEADERBOARD */}
+          {page === 'leaderboard' && (
+            <>
+              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-5">
+                <KPI label="Your Rank" value="#11" cls="text-gold" />
+                <KPI label="Total Committed" value="$0" />
+                <KPI label="Percentile" value="Unranked" cls="text-asp-green" />
+                <KPI label="Tier" value="Bronze" cls="text-gold" />
+              </div>
+              <Card title="Top Partners · Global Leaderboard" extra={<span className="font-mono text-[0.65rem] text-t3">Anonymized · Updated daily</span>}>
+                <div className="overflow-x-auto -m-5">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        {['#', 'Partner', 'Region', 'Committed', 'Est. Returns', 'Tier'].map(h => (
+                          <th key={h} className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase py-2.5 px-4 text-right first:text-left bg-s2 border-b border-b2">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboardData.map((p, i) => (
+                        <tr key={i} className="hover:bg-s2">
+                          <td className={`font-mono text-[0.78rem] py-3 px-4 border-b border-b1 text-left ${i < 3 ? 'text-gold' : 'text-t2'}`}>{i + 1}</td>
+                          <td className="font-body text-[0.78rem] text-t1 py-3 px-4 border-b border-b1 text-right">{p.name}</td>
+                          <td className="font-mono text-[0.78rem] text-t2 py-3 px-4 border-b border-b1 text-right">{p.region}</td>
+                          <td className="font-mono text-[0.78rem] text-gold py-3 px-4 border-b border-b1 text-right">${p.committed.toLocaleString()}</td>
+                          <td className="font-mono text-[0.78rem] text-asp-green py-3 px-4 border-b border-b1 text-right">${Math.round(p.committed * 1.15).toLocaleString()}</td>
+                          <td className="py-3 px-4 border-b border-b1 text-right">
+                            <span className={`font-label text-[0.55rem] tracking-[0.1em] uppercase py-0.5 px-2 border ${p.tier === 'Gold' ? 'text-asp-green border-[hsl(var(--green))]' : p.tier === 'Silver' ? 'text-asp-teal border-[hsl(var(--teal))]' : 'text-asp-amber border-[hsl(var(--amber))]'}`}>{p.tier}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
+          )}
+
+          {/* NETWORK */}
+          {page === 'network' && (
+            <>
+              <Card title="Global Partner Network" extra={<span className="font-mono text-[0.65rem] text-t3">1,247+ partners · 6 continents</span>}>
+                <div className="bg-s2 p-6">
+                  <svg viewBox="0 0 1000 480" className="w-full opacity-85" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="1000" height="480" fill="hsl(var(--s2))" />
+                    <ellipse cx="200" cy="210" rx="115" ry="85" fill="hsl(var(--b1))" opacity="0.9" />
+                    <ellipse cx="225" cy="320" rx="72" ry="65" fill="hsl(var(--b1))" opacity="0.9" />
+                    <ellipse cx="462" cy="185" rx="82" ry="58" fill="hsl(var(--b1))" opacity="0.9" />
+                    <ellipse cx="518" cy="295" rx="92" ry="92" fill="hsl(var(--b1))" opacity="0.9" />
+                    <ellipse cx="685" cy="215" rx="135" ry="82" fill="hsl(var(--b1))" opacity="0.9" />
+                    <ellipse cx="825" cy="355" rx="62" ry="42" fill="hsl(var(--b1))" opacity="0.9" />
+                    <circle cx="462" cy="172" r="7" fill="hsl(43 55% 54%)" opacity="0.9"><animate attributeName="r" values="7;11;7" dur="2s" repeatCount="indefinite" /></circle>
+                    <circle cx="490" cy="165" r="5" fill="hsl(43 55% 54%)" opacity="0.7" />
+                    <circle cx="662" cy="228" r="8" fill="hsl(43 55% 54%)" opacity="0.9"><animate attributeName="r" values="8;12;8" dur="2.5s" repeatCount="indefinite" /></circle>
+                    <circle cx="718" cy="238" r="6" fill="hsl(43 55% 54%)" opacity="0.8" />
+                    <circle cx="508" cy="308" r="8" fill="hsl(43 55% 54%)" opacity="0.9"><animate attributeName="r" values="8;12;8" dur="3s" repeatCount="indefinite" /></circle>
+                    <circle cx="538" cy="338" r="6" fill="hsl(43 55% 54%)" opacity="0.7" />
+                    <circle cx="168" cy="198" r="6" fill="hsl(43 55% 54%)" opacity="0.7" />
+                    <circle cx="822" cy="352" r="5" fill="hsl(43 55% 54%)" opacity="0.5" />
+                    <line x1="462" y1="172" x2="662" y2="228" stroke="hsl(43 55% 54%)" strokeWidth="0.6" opacity="0.15" />
+                    <line x1="462" y1="172" x2="508" y2="308" stroke="hsl(43 55% 54%)" strokeWidth="0.6" opacity="0.15" />
+                    <line x1="662" y1="228" x2="788" y2="258" stroke="hsl(43 55% 54%)" strokeWidth="0.6" opacity="0.15" />
+                  </svg>
+                </div>
+              </Card>
+              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
+                <KPI label="Middle East" value="34%" cls="text-gold" change="UAE · KSA · Qatar" />
+                <KPI label="Africa" value="28%" change="NG · KE · GH · ZA" />
+                <KPI label="Europe" value="22%" change="UK · DE · CH" />
+                <KPI label="Asia Pacific" value="16%" change="SG · IN · AU" />
+              </div>
+            </>
+          )}
+
+          {/* CONCIERGE */}
+          {page === 'concierge' && (
+            <div className="bg-s1 border border-b1 flex flex-col" style={{ height: 'calc(100vh - 130px)' }}>
+              <div className="py-4 px-5 border-b border-b1 flex justify-between items-center">
+                <span className="font-label text-[0.68rem] text-t2 tracking-[0.18em] uppercase">ASP Intelligence</span>
+                <span className="font-mono text-[0.65rem] text-asp-green flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Online</span>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 min-h-0">
+                {chatMessages.map((m, i) => (
+                  <div key={i} className={`max-w-[80%] ${m.from === 'user' ? 'self-end' : 'self-start'}`}>
+                    <div className={`p-4 px-5 border-l-2 ${m.from === 'user' ? 'bg-[hsl(var(--b2))] border-l-[hsl(var(--b3))]' : 'bg-s2 border-l-[hsl(var(--gold))]'}`}>
+                      {m.from === 'asp' && <div className="font-label text-[0.58rem] text-gold tracking-[0.15em] uppercase mb-2">ASP Intelligence</div>}
+                      <div className="font-body text-[0.85rem] text-t2 leading-[1.75]">{m.text}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="py-4 px-5 border-t border-b1 flex gap-3 flex-shrink-0">
+                <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                  placeholder="Ask about funds, returns, strategies..." className="flex-1 bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-2.5 font-body text-[0.85rem] text-t1 outline-none" />
+                <button onClick={sendMessage} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-2.5 px-6 cursor-pointer hover:bg-gold-bright transition-all">Send</button>
+              </div>
+            </div>
+          )}
+
+          {/* VAULT */}
+          {page === 'vault' && (
+            <>
+              <Card title="Document Vault" extra={<span className="font-mono text-[0.65rem] text-t3">Encrypted · Partner Access Only</span>}>
+                <div className="bg-s2 py-3.5 px-[18px] border-l-2 border-l-[hsl(var(--b2))] font-body text-[0.82rem] text-t3 leading-[1.7] mb-6">
+                  Documents are generated automatically as you invest and earn. All files are stored securely and accessible only to you.
+                </div>
+                <div className="text-center py-15 font-heading text-base italic text-t3">No documents yet. Documents appear here as your portfolio grows.</div>
+              </Card>
+              <Card title="Generate Partner Certificate">
+                <p className="font-body text-[0.85rem] text-t3 leading-[1.75] mb-5">Generate your official Adams Streett Partners membership certificate displaying your tier, partner ID, and membership date.</p>
+                <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all">Generate Certificate</button>
+              </Card>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
