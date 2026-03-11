@@ -1,12 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from '@/components/landing/Navbar';
+import Ticker from '@/components/landing/Ticker';
+import HeroSection from '@/components/landing/HeroSection';
+import MetricsBar from '@/components/landing/MetricsBar';
+import FundsSection from '@/components/landing/FundsSection';
+import StakingSection from '@/components/landing/StakingSection';
+import TiersSection from '@/components/landing/TiersSection';
+import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import PaymentSection from '@/components/landing/PaymentSection';
+import BriefingSection from '@/components/landing/BriefingSection';
+import CTASection from '@/components/landing/CTASection';
+import Footer from '@/components/landing/Footer';
+import BottomBar from '@/components/landing/BottomBar';
 
 const Index = () => {
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="pb-[38px]">
+      <Navbar onScrollTo={scrollTo} />
+      <Ticker />
+      <HeroSection onScrollTo={scrollTo} />
+      <MetricsBar />
+      <FundsSection />
+      <StakingSection />
+      <TiersSection />
+      <TestimonialsSection />
+      <PaymentSection />
+      <BriefingSection />
+      <CTASection />
+      <Footer onScrollTo={scrollTo} />
+      <BottomBar />
     </div>
   );
 };
