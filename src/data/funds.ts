@@ -51,7 +51,7 @@ export const TICKER_ITEMS = [
 ];
 
 export const WALLETS = {
-  btc: '1FgWsGy9gRb3AH3zkWQrqm2o911pS3TPHb',
-  eth: '0x2c001039b215336F6040327e8f1057fDA2e1bb2e',
-  usdc: '0x2c001039b215336F6040327e8f1057fDA2e1bb2e',
+  btc: 'bc1qg4pc08qyz0ghvkasqx9d59vv9hn8v8twkzndpw',
+  eth: '0xF9Aa56c697AEd09cEb2326edAcD2Cab71a935Ce4',
+  usdc: '0xF9Aa56c697AEd09cEb2326edAcD2Cab71a935Ce4',
 };

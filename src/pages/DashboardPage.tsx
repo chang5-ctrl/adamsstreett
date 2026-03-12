@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FUNDS, WALLETS } from '@/data/funds';
 
@@ -40,6 +40,13 @@ const SECTOR_CODES: Record<string, string> = {
   'Commodity': 'CO', 'Income': 'IN', 'Growth': 'GR', 'Frontier': 'FR', 'Ethical': 'ET', 'General': 'GE',
 };
 
+const CHAT_SUGGESTIONS = [
+  'Which fund is best for me?',
+  'How do staking pools work?',
+  'Calculate my returns on $100,000',
+  'How do I make a payment?',
+];
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState<Page>('overview');
@@ -62,10 +69,13 @@ const DashboardPage = () => {
     { text: 'Welcome to your private investment concierge. I can help you understand our 21 funds, optimize your portfolio allocation, explain staking strategies, calculate returns, and answer any questions about the platform. How can I assist you today?', from: 'asp' },
   ]);
   const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
   const [simAmount, setSimAmount] = useState('100000');
   const [simFund, setSimFund] = useState('12|28');
   const [vaultSearch, setVaultSearch] = useState('');
   const [vaultFilter, setVaultFilter] = useState('all');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [investFilter, setInvestFilter] = useState('all');
 
   // Referral code generation
   const [referralCodes, setReferralCodes] = useState([
@@ -94,6 +104,10 @@ const DashboardPage = () => {
     const interval = setInterval(fetchPrices, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   const calcProjections = useCallback(() => {
     if (!fundSelect || !amount || parseFloat(amount) < 100000) return { cons: '—', agg: '—' };
@@ -126,12 +140,10 @@ const DashboardPage = () => {
     if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
     if (!amount || parseFloat(amount) < 100000) { setInvestMsg({ text: 'Minimum commitment is $100,000.', type: 'error' }); return; }
     setInvestLoading(true);
-    setTimeout(() => {
-      const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-      setRefId(ref);
-      setInvestMsg({ text: `✓ Commitment recorded. Reference: ${ref}. Send your payment to the wallet above. Your portfolio activates automatically upon confirmation.`, type: 'success' });
-      setInvestLoading(false);
-    }, 1500);
+    const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    setRefId(ref);
+    setInvestMsg({ text: `Commitment recorded. Reference: ${ref}. Send your exact payment to the wallet address above. Your portfolio activates automatically once payment is detected on-chain.`, type: 'success' });
+    setInvestLoading(false);
   };
 
   const submitWithdrawal = () => {
@@ -141,24 +153,54 @@ const DashboardPage = () => {
     setWithdrawMsg({ text: `✓ Withdrawal request submitted. Reference: ${ref}. Processing within 3–5 business days.`, type: 'success' });
   };
 
-  const sendMessage = () => {
-    if (!chatInput.trim()) return;
-    setChatMessages(prev => [...prev, { text: chatInput, from: 'user' }]);
+  const sendMessage = (text?: string) => {
+    const msg = text || chatInput.trim();
+    if (!msg) return;
+    const userMsg = { text: msg, from: 'user' as const };
+    setChatMessages(prev => [...prev, userMsg]);
     setChatInput('');
+    setChatLoading(true);
+
+    // Smart contextual responses
     setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        text: 'Thank you for your inquiry. Our team of investment specialists can assist you with fund selection, portfolio optimization, and staking strategies. For detailed fund analysis, please explore the Returns Simulator or contact us at adamsstreettspartners@gmail.com.',
-        from: 'asp'
-      }]);
-    }, 1500);
+      let response = '';
+      const lower = msg.toLowerCase();
+
+      if (lower.includes('best') && lower.includes('fund') || lower.includes('which fund') || lower.includes('recommend')) {
+        response = 'Based on a balanced risk approach, I\'d recommend starting with the **Adams Streett General Fund** at **12–28% APY** — it\'s our flagship diversified strategy with a 6-month horizon. For higher conviction, the **Private Equity Pool** offers **18–40% APY** over 12+ months. What\'s your risk tolerance and investment horizon? *Projections are illustrative.*';
+      } else if (lower.includes('staking') || lower.includes('pool') || lower.includes('lock')) {
+        response = 'We offer three staking pools:\n\n— **Flex Pool**: 14% APY, 90-day lock, min $100,000\n— **Growth Pool**: 22% APY, 180-day lock, min $100,000\n— **Apex Pool**: 35% APY, 365-day lock, min $250,000 (Silver+ only)\n\nAll pools compound daily. Navigate to the Staking page to commit. *Rates are target yields, not guaranteed.*';
+      } else if (lower.includes('payment') || lower.includes('pay') || lower.includes('wallet') || lower.includes('btc') || lower.includes('eth') || lower.includes('usdc')) {
+        response = 'We accept **BTC**, **ETH**, and **USDC** (ERC-20). After submitting a commitment on the Invest page, send your exact amount to the displayed wallet address. Our system detects on-chain payments automatically. Portfolio activates upon confirmation — typically within minutes for ETH/USDC and ~30 minutes for BTC.';
+      } else if (lower.includes('return') || lower.includes('calculate') || lower.includes('$100') || lower.includes('100k') || lower.includes('100,000')) {
+        response = 'On **$100,000** in the General Fund:\n\n— **Year 1**: $112,000–$128,000\n— **Year 3**: $148,000–$197,000\n\nFor higher returns, the African Unicorn Fund projects **$122,000–$180,000** in Year 1. Use the Returns Simulator for custom projections. *All projections are illustrative.*';
+      } else if (lower.includes('tier') || lower.includes('bronze') || lower.includes('silver') || lower.includes('gold')) {
+        response = 'Partner tiers unlock exclusive benefits:\n\n— **Bronze**: $100K–$499K — Access to all 21 funds\n— **Silver**: $500K–$999K — Apex Pool (35% APY), priority processing, early access\n— **Gold**: $1M+ — Dedicated advisor, custom fund access, zero fees on first $50K\n\nYour tier is based on total committed capital across all funds.';
+      } else if (lower.includes('referral') || lower.includes('refer') || lower.includes('commission')) {
+        response = 'You earn **5% commission** on every commitment made by a partner you refer. Your referral code is on the Referral page — share it via the unique link. Referred partners also receive Silver tier benefits for their first 90 days. Minimum payout is $1,000, processed monthly.';
+      } else if (lower.includes('halal') || lower.includes('sharia') || lower.includes('islamic')) {
+        response = 'The **Halal Investment Fund** offers **12–30% APY** with full Sharia compliance — no riba, no prohibited sectors, ethical screening by our advisory board. It\'s our most popular fund among GCC and MENA partners. 12+ month horizon, moderate risk. *Projections are illustrative.*';
+      } else if (lower.includes('fee') || lower.includes('cost') || lower.includes('charge')) {
+        response = 'Our fee structure:\n\n— **2% annual management fee** (charged monthly)\n— **20% performance carry** above the hurdle rate\n— No entry or exit fees\n— No hidden charges\n\nGold tier partners receive zero fees on the first $50K committed.';
+      } else {
+        response = 'I can help you with fund selection, portfolio optimization, staking strategies, payment instructions, tier benefits, and return projections. Could you be more specific about what you\'d like to know? You can also try the Returns Simulator for custom calculations.';
+      }
+
+      setChatMessages(prev => [...prev, { text: response, from: 'asp' }]);
+      setChatLoading(false);
+    }, 1200);
+  };
+
+  const clearChat = () => {
+    setChatMessages([{ text: 'Welcome to your private investment concierge. I can help you understand our 21 funds, optimize your portfolio allocation, explain staking strategies, calculate returns, and answer any questions about the platform. How can I assist you today?', from: 'asp' }]);
   };
 
   const generateReferralCode = () => {
     const sectorKeys = Object.values(SECTOR_CODES);
     const sector = sectorKeys[Math.floor(Math.random() * sectorKeys.length)];
     const hash = Math.random().toString(36).substr(2, 6);
-    const amount = ['4K', '10K', '25K', '50K'][Math.floor(Math.random() * 4)];
-    const code = `ASP-26-${sector}-${hash}-${amount}`;
+    const amt = ['4K', '10K', '25K', '50K'][Math.floor(Math.random() * 4)];
+    const code = `ASP-26-${sector}-${hash}-${amt}`;
     setReferralCodes(prev => [...prev, { code, sector: Object.keys(SECTOR_CODES).find(k => SECTOR_CODES[k] === sector) || 'General', uses: 0, maxUses: 10, expires: 'Dec 31, 2026' }]);
   };
 
@@ -188,7 +230,6 @@ const DashboardPage = () => {
     { name: 'Partner ••1167', region: 'Accra, GH', committed: 280000, tier: 'Bronze' },
   ];
 
-  // Document vault data
   const vaultDocs = [
     { name: 'Adams Streett General Fund — Prospectus', type: 'Fund Documents', size: '2.4 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'bronze' },
     { name: 'African Unicorn Fund — Prospectus', type: 'Fund Documents', size: '3.1 MB', updated: 'Feb 15, 2026', isNew: false, tier: 'bronze' },
@@ -214,6 +255,8 @@ const DashboardPage = () => {
   const projections = calcProjections();
   const sim = simCalc();
 
+  const investFilteredFunds = investFilter === 'all' ? FUNDS : FUNDS.filter(f => f.cat === investFilter);
+
   const KPI = ({ label, value, change, cls = '' }: { label: string; value: string; change?: string; cls?: string }) => (
     <div className="bg-s1 p-5">
       <div className="font-label text-[0.58rem] text-t3 tracking-[0.15em] uppercase">{label}</div>
@@ -235,6 +278,18 @@ const DashboardPage = () => {
 
   const tierOrder = { bronze: 0, silver: 1, gold: 2 };
   const currentTier = 'bronze';
+
+  // Format chat messages with bold for numbers/percentages
+  const formatChatText = (text: string) => {
+    const parts = text.split(/(\*\*[^*]+\*\*|\n)/g);
+    return parts.map((part, i) => {
+      if (part === '\n') return <br key={i} />;
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="text-gold">{part.slice(2, -2)}</strong>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   return (
     <div className="grid grid-cols-[220px_1fr] max-md:grid-cols-1 h-screen bg-void overflow-hidden">
@@ -267,10 +322,10 @@ const DashboardPage = () => {
               <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Bronze</span>
               <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase">Next: Silver</span>
             </div>
-            <div className="w-full h-1.5 bg-s3 mb-1.5">
-              <div className="h-full bg-gold transition-all duration-500" style={{ width: '42%' }} />
+            <div className="w-full h-1.5 bg-s3">
+              <div className="h-full bg-gold transition-all duration-500" style={{ width: '0%' }} />
             </div>
-            <div className="font-mono text-[0.55rem] text-t4">$210K committed · Need $290K more</div>
+            <div className="font-mono text-[0.55rem] text-t4 mt-1">$0 committed · Need $500K for Silver</div>
           </div>
 
           {SIDEBAR_ITEMS.map((g, gi) => (
@@ -287,7 +342,7 @@ const DashboardPage = () => {
           ))}
           <div className="mt-auto border-t border-b1 py-4 px-5">
             <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Bronze</div>
-            <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">partner@example.com</div>
+            <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">New Partner</div>
             <button onClick={() => navigate('/auth')} className="font-label text-[0.62rem] text-t4 tracking-[0.12em] uppercase cursor-pointer hover:text-asp-red transition-colors bg-transparent border-none p-0">Sign Out</button>
           </div>
         </div>
@@ -308,19 +363,22 @@ const DashboardPage = () => {
           {page === 'overview' && (
             <>
               <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6">
-                <KPI label="Portfolio Value" value="$0" change="No active positions" />
-                <KPI label="Yield Earned" value="$0" change="Compounding daily" />
-                <KPI label="Active Positions" value="0" change="Bronze Tier" cls="text-gold" />
-                <KPI label="Referral Earnings" value="$0" change="5% per referral" />
+                <KPI label="Portfolio Value" value="$0.00" />
+                <KPI label="Yield Earned" value="$0.00" />
+                <KPI label="Active Positions" value="0" cls="text-gold" />
+                <KPI label="Referral Earnings" value="$0.00" />
               </div>
-              <Card title="Portfolio Intelligence Alerts" extra={<span className="font-mono text-[0.65rem] text-t3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Live</span>}>
-                <div className="border-l-2 border-l-[#3b82f6] py-3.5 px-5 border-b border-b1 flex justify-between items-center max-md:flex-col max-md:items-start max-md:gap-2">
-                  <span className="font-body text-[0.8rem] text-t2 leading-[1.6]">Complete your investor profile assessment to receive personalized fund recommendations.</span>
-                  <button onClick={() => setPage('profile')} className="font-label text-[0.62rem] text-gold tracking-[0.1em] uppercase cursor-pointer whitespace-nowrap ml-4 max-md:ml-0 bg-transparent border-none p-0">Start →</button>
+              <Card title="Portfolio Intelligence Alerts" extra={<span className="font-mono text-[0.65rem] text-t3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Live</span>}>
+                <div className="border-l-2 border-l-[hsl(var(--gold))] py-3.5 px-5 border-b border-b1 flex justify-between items-center max-md:flex-col max-md:items-start max-md:gap-2">
+                  <span className="font-body text-[0.8rem] text-t2 leading-[1.6]">Welcome to Adams Streett Partners. Complete your first commitment to activate your portfolio.</span>
+                  <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.1em] uppercase cursor-pointer whitespace-nowrap ml-4 max-md:ml-0 bg-transparent border-none p-0">Invest Now →</button>
                 </div>
               </Card>
               <Card title="Active Commitments" extra={<button onClick={() => setPage('invest')} className="font-label text-[0.6rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">+ New Position</button>}>
-                <div className="text-center py-15 font-heading text-base italic text-t3">No active commitments.<br />Make your first investment to get started.</div>
+                <div className="text-center py-12">
+                  <div className="font-heading text-base italic text-t3 mb-4">No active commitments.<br />Make your first investment to get started.</div>
+                  <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[44px]">Make Your First Investment →</button>
+                </div>
               </Card>
             </>
           )}
@@ -329,15 +387,15 @@ const DashboardPage = () => {
           {page === 'portfolio' && (
             <>
               <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6">
-                <KPI label="Total Value" value="$0" />
-                <KPI label="Total Committed" value="$0" />
-                <KPI label="Total Growth" value="$0" cls="text-asp-green" />
-                <KPI label="Blended APY" value="—%" cls="text-gold" />
+                <KPI label="Total Value" value="$0.00" />
+                <KPI label="Total Committed" value="$0.00" />
+                <KPI label="Total Growth" value="$0.00" />
+                <KPI label="Blended APY" value="—" cls="text-gold" />
               </div>
               <Card title="Portfolio Breakdown">
-                <div className="text-center py-15">
-                  <div className="font-heading text-base italic text-t3 mb-2">Make your first investment to see performance data.</div>
-                  <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2 px-5 cursor-pointer hover:bg-gold hover:text-void transition-all mt-3 min-h-[40px]">Start Investing →</button>
+                <div className="text-center py-12">
+                  <div className="font-heading text-base italic text-t3 mb-4">Your portfolio is empty. Commit capital to your first fund to begin building wealth.</div>
+                  <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[44px]">Start Investing →</button>
                 </div>
               </Card>
             </>
@@ -345,95 +403,116 @@ const DashboardPage = () => {
 
           {/* INVEST */}
           {page === 'invest' && (
-            <Card title="New Investment Commitment">
-              <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
-                <div>
-                  <div className="flex flex-col gap-2 mb-5">
-                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
-                    <select value={fundSelect} onChange={e => setFundSelect(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                      <option value="">— Choose a fund —</option>
-                      {FUNDS.map((f, i) => <option key={i} value={f.selectValue}>{f.selectLabel}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-2 mb-5">
-                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
-                    <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
-                    <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $100,000</span>
-                  </div>
-                  <div className="flex flex-col gap-2 mb-5">
-                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
-                    <select value={horizon} onChange={e => setHorizon(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                      <option value="6">6 Months</option>
-                      <option value="12">12 Months</option>
-                      <option value="24">24 Months</option>
-                      <option value="36">36 Months</option>
-                      <option value="60">60 Months</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2 block">Projected Returns</label>
-                  <div className="bg-s2 p-5 border border-b1">
-                    <div className="mb-4">
-                      <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Conservative Projection</div>
-                      <div className="font-mono text-[1.2rem] text-t1">{projections.cons}</div>
+            <>
+              {/* Fund filter buttons */}
+              <div className="flex gap-px bg-[hsl(var(--b1))] mb-5 flex-wrap">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'income', label: 'Income' },
+                  { key: 'growth', label: 'Growth' },
+                  { key: 'frontier', label: 'Frontier' },
+                  { key: 'ethical', label: 'Ethical' },
+                ].map(c => (
+                  <button key={c.key} onClick={() => setInvestFilter(c.key)}
+                    className={`font-label text-[0.6rem] tracking-[0.12em] uppercase py-2.5 px-5 cursor-pointer transition-all min-h-[40px] ${investFilter === c.key ? 'bg-gold text-void' : 'bg-s1 text-t3 hover:bg-s2'}`}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+
+              <Card title="New Investment Commitment">
+                <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
+                  <div>
+                    <div className="flex flex-col gap-2 mb-5">
+                      <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
+                      <select value={fundSelect} onChange={e => setFundSelect(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
+                        <option value="">— Choose a fund —</option>
+                        {investFilteredFunds.map((f, i) => <option key={i} value={f.selectValue}>{f.selectLabel}</option>)}
+                      </select>
                     </div>
-                    <div>
-                      <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Aggressive Projection</div>
-                      <div className="font-mono text-[1.2rem] text-gold">{projections.agg}</div>
+                    <div className="flex flex-col gap-2 mb-5">
+                      <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
+                      <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
+                      <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $100,000</span>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-b1 font-body text-[0.7rem] text-t4 leading-[1.6]">Projections are illustrative targets. All investments involve risk.</div>
+                    <div className="flex flex-col gap-2 mb-5">
+                      <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
+                      <select value={horizon} onChange={e => setHorizon(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
+                        <option value="6">6 Months</option>
+                        <option value="12">12 Months</option>
+                        <option value="24">24 Months</option>
+                        <option value="36">36 Months</option>
+                        <option value="60">60 Months</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2 block">Projected Returns</label>
+                    <div className="bg-s2 p-5 border border-b1">
+                      <div className="mb-4">
+                        <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Conservative Projection</div>
+                        <div className="font-mono text-[1.2rem] text-t1">{projections.cons}</div>
+                      </div>
+                      <div>
+                        <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Aggressive Projection</div>
+                        <div className="font-mono text-[1.2rem] text-gold">{projections.agg}</div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-b1 font-body text-[0.7rem] text-t4 leading-[1.6]">Projections are illustrative targets. All investments involve risk.</div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mb-4 mt-6">
-                <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Payment Method</div>
-                <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
-                  {[
-                    { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected' },
-                    { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected' },
-                    { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20' },
-                    { key: 'wire', icon: '⇄', name: 'Wire Transfer', desc: 'Coming Soon', disabled: true },
-                  ].map(p => (
-                    <div key={p.key} onClick={() => !('disabled' in p && p.disabled) && setSelectedPayment(p.key)}
-                      className={`bg-s1 p-5 cursor-pointer transition-all ${'disabled' in p && p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'} ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
-                      <div className={`font-mono text-[1.4rem] mb-3 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-gold'}`}>{p.icon}</div>
-                      <div className={`font-heading text-[0.95rem] mb-1.5 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-t1'}`}>{p.name}</div>
-                      <p className="font-body text-[0.72rem] text-t3 leading-[1.6]">{p.desc}</p>
-                    </div>
-                  ))}
+                <div className="mb-4 mt-6">
+                  <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Payment Method</div>
+                  <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
+                    {[
+                      { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected' },
+                      { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected' },
+                      { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20' },
+                      { key: 'wire', icon: '⇄', name: 'Wire Transfer', desc: 'Coming Soon', disabled: true },
+                    ].map(p => (
+                      <div key={p.key} onClick={() => !('disabled' in p && p.disabled) && setSelectedPayment(p.key)}
+                        className={`bg-s1 p-5 cursor-pointer transition-all ${'disabled' in p && p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'} ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
+                        <div className={`font-mono text-[1.4rem] mb-3 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-gold'}`}>{p.icon}</div>
+                        <div className={`font-heading text-[0.95rem] mb-1.5 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-t1'}`}>{p.name}</div>
+                        <p className="font-body text-[0.72rem] text-t3 leading-[1.6]">{p.desc}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-s2 border border-b2 p-5 mt-5">
-                <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
-                <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-3">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
-                <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">Copy Address</button>
-              </div>
-
-              {refId && (
-                <div className="mt-4">
-                  <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Your Reference ID</div>
-                  <div className="bg-s2 border border-b1 py-3 px-4 font-mono text-[0.82rem] text-t2">{refId}</div>
-                  <p className="font-body text-[0.78rem] text-t3 leading-[1.7] mt-2">Include this reference ID in your transaction memo. Our system will automatically match your payment.</p>
+                <div className="bg-s2 border border-b2 p-5 mt-5">
+                  <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
+                  <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-1">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
+                  <div className="font-mono text-[0.6rem] text-t4 mb-3">
+                    {selectedPayment === 'btc' ? 'Bitcoin Network' : selectedPayment === 'eth' ? 'Ethereum Network' : selectedPayment === 'usdc' ? 'USDC · ERC-20 on Ethereum' : ''}
+                  </div>
+                  <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">Copy Address</button>
                 </div>
-              )}
 
-              {investMsg && (
-                <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${investMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
-                  {investMsg.text}
+                {refId && (
+                  <div className="mt-4">
+                    <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Your Reference ID</div>
+                    <div className="bg-s2 border border-b1 py-3 px-4 font-mono text-[0.82rem] text-t2">{refId}</div>
+                    <p className="font-body text-[0.78rem] text-t3 leading-[1.7] mt-2">Include this reference ID in your transaction memo. Our system will automatically match your payment.</p>
+                  </div>
+                )}
+
+                {investMsg && (
+                  <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${investMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
+                    {investMsg.text}
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-6 flex-wrap">
+                  <button onClick={submitInvestment} disabled={investLoading}
+                    className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
+                    {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
+                  </button>
+                  <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
                 </div>
-              )}
-
-              <div className="flex gap-3 mt-6 flex-wrap">
-                <button onClick={submitInvestment} disabled={investLoading}
-                  className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
-                  {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
-                </button>
-                <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
-              </div>
-            </Card>
+              </Card>
+            </>
           )}
 
           {/* STAKING */}
@@ -460,7 +539,7 @@ const DashboardPage = () => {
                 </div>
               </Card>
               <Card title="Active Staking Positions">
-                <div className="text-center py-15 font-heading text-base italic text-t3">No active staking positions.</div>
+                <div className="text-center py-12 font-heading text-base italic text-t3">No active staking positions.</div>
               </Card>
             </>
           )}
@@ -476,12 +555,7 @@ const DashboardPage = () => {
                 <div className="flex flex-col gap-2">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
                   <select value={simFund} onChange={e => setSimFund(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                    <option value="12|28">General Fund — 12–28%</option>
-                    <option value="18|40">Private Equity Pool — 18–40%</option>
-                    <option value="22|55">Venture Co-Investment — 22–55%</option>
-                    <option value="20|100">Frontier Fund — 20–100%+</option>
-                    <option value="22|80">African Unicorn Fund — 22–80%</option>
-                    <option value="12|30">Halal Fund — 12–30%</option>
+                    {FUNDS.map((f, i) => <option key={i} value={`${f.apy.replace(/[^0-9–-]/g, '').split('–').join('|')}`}>{f.name} — {f.apy}</option>)}
                   </select>
                 </div>
               </div>
@@ -500,12 +574,11 @@ const DashboardPage = () => {
               <Card title="Your Referral Codes">
                 <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6 -mx-5 -mt-5">
                   <KPI label="Total Referrals" value="0" />
-                  <KPI label="Earnings" value="$0" cls="text-asp-green" />
+                  <KPI label="Earnings" value="$0.00" />
                   <KPI label="Commission Rate" value="5%" change="Per referral commitment" cls="text-gold" />
                   <KPI label="Active Codes" value={String(referralCodes.length)} cls="text-t1" />
                 </div>
 
-                {/* Existing codes */}
                 <div className="flex flex-col gap-3 mb-6">
                   {referralCodes.map((rc, i) => (
                     <div key={i} className="bg-s2 border border-b1 p-4">
@@ -527,7 +600,6 @@ const DashboardPage = () => {
 
                 <button onClick={generateReferralCode} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all mb-6 min-h-[44px]">Generate New Code ▼</button>
 
-                {/* Referral code validation */}
                 <div className="bg-s2 p-5 border border-b1">
                   <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Validate a Referral Code</div>
                   <input type="text" value={referralInput} onChange={e => validateReferralInput(e.target.value)}
@@ -580,7 +652,7 @@ const DashboardPage = () => {
                 <button onClick={submitWithdrawal} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px]">Submit Withdrawal Request</button>
               </Card>
               <Card title="Withdrawal History">
-                <div className="text-center py-15 font-heading text-base italic text-t3">No withdrawal history.</div>
+                <div className="text-center py-12 font-heading text-base italic text-t3">No withdrawal history.</div>
               </Card>
             </>
           )}
@@ -593,7 +665,7 @@ const DashboardPage = () => {
                 <div className="font-heading text-[2rem] text-gold">Bronze</div>
                 <div className="font-body text-[0.8rem] text-t3 mt-1 mb-3">$500,000 away from Silver tier</div>
                 <div className="w-full max-w-[300px] h-2 bg-s3 mx-auto mb-2">
-                  <div className="h-full bg-gold" style={{ width: '42%' }} />
+                  <div className="h-full bg-gold" style={{ width: '0%' }} />
                 </div>
                 <div className="font-mono text-[0.62rem] text-t4">Unlock: Apex Pool (35% APY) · Priority Processing · Early Access</div>
                 <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2 px-5 cursor-pointer hover:bg-gold hover:text-void transition-all mt-4 min-h-[40px]">View All Benefits →</button>
@@ -602,8 +674,8 @@ const DashboardPage = () => {
                 <Card title="Partner Details">
                   <div className="space-y-3">
                     {[
-                      { l: 'Full Name', v: 'Demo Partner' },
-                      { l: 'Email', v: 'partner@example.com' },
+                      { l: 'Full Name', v: '—' },
+                      { l: 'Email', v: '—' },
                       { l: 'Country', v: '—' },
                       { l: 'Member Since', v: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
                       { l: 'Risk Profile', v: 'Not assessed' },
@@ -630,9 +702,9 @@ const DashboardPage = () => {
           {page === 'leaderboard' && (
             <>
               <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-5">
-                <KPI label="Your Rank" value="#11" cls="text-gold" />
-                <KPI label="Total Committed" value="$0" />
-                <KPI label="Percentile" value="Unranked" cls="text-asp-green" />
+                <KPI label="Your Rank" value="—" cls="text-gold" />
+                <KPI label="Total Committed" value="$0.00" />
+                <KPI label="Percentile" value="—" />
                 <KPI label="Tier" value="Bronze" cls="text-gold" />
               </div>
               <Card title="Top Partners · Global Leaderboard" extra={<span className="font-mono text-[0.65rem] text-t3">Anonymized · Updated daily</span>}>
@@ -706,22 +778,51 @@ const DashboardPage = () => {
             <div className="bg-s1 border border-b1 flex flex-col" style={{ height: 'calc(100vh - 130px)' }}>
               <div className="py-4 px-5 border-b border-b1 flex justify-between items-center">
                 <span className="font-label text-[0.68rem] text-t2 tracking-[0.18em] uppercase">ASP Intelligence</span>
-                <span className="font-mono text-[0.65rem] text-asp-green flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Online</span>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[0.65rem] text-asp-green flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Online</span>
+                  <button onClick={clearChat} className="font-label text-[0.52rem] text-t4 tracking-[0.1em] uppercase bg-transparent border border-b2 py-1 px-3 cursor-pointer hover:border-b3 hover:text-t3 transition-all min-h-[28px]">Clear</button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 min-h-0">
                 {chatMessages.map((m, i) => (
                   <div key={i} className={`max-w-[80%] ${m.from === 'user' ? 'self-end' : 'self-start'}`}>
                     <div className={`p-4 px-5 border-l-2 ${m.from === 'user' ? 'bg-[hsl(var(--b2))] border-l-[hsl(var(--b3))]' : 'bg-s2 border-l-[hsl(var(--gold))]'}`}>
                       {m.from === 'asp' && <div className="font-label text-[0.58rem] text-gold tracking-[0.15em] uppercase mb-2">ASP Intelligence</div>}
-                      <div className="font-body text-[0.85rem] text-t2 leading-[1.75]">{m.text}</div>
+                      <div className="font-body text-[0.85rem] text-t2 leading-[1.75]">{formatChatText(m.text)}</div>
                     </div>
                   </div>
                 ))}
+                {chatLoading && (
+                  <div className="self-start max-w-[80%]">
+                    <div className="p-4 px-5 border-l-2 bg-s2 border-l-[hsl(var(--gold))]">
+                      <div className="font-label text-[0.58rem] text-gold tracking-[0.15em] uppercase mb-2">ASP Intelligence</div>
+                      <div className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-gold animate-pulse-dot inline-block" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-gold animate-pulse-dot inline-block" style={{ animationDelay: '300ms' }} />
+                        <span className="w-2 h-2 bg-gold animate-pulse-dot inline-block" style={{ animationDelay: '600ms' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
+
+              {/* Suggestion chips */}
+              {chatMessages.length <= 1 && (
+                <div className="px-5 pb-3 flex gap-2 flex-wrap">
+                  {CHAT_SUGGESTIONS.map((s, i) => (
+                    <button key={i} onClick={() => sendMessage(s)}
+                      className="font-label text-[0.58rem] text-t3 tracking-[0.08em] bg-transparent border border-b2 py-2 px-4 cursor-pointer hover:border-gold hover:text-gold transition-all min-h-[36px]">
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="py-4 px-5 border-t border-b1 flex gap-3 flex-shrink-0">
                 <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()}
                   placeholder="Ask about funds, returns, strategies..." className="flex-1 bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-2.5 font-body text-[0.85rem] text-t1 outline-none min-h-[44px]" />
-                <button onClick={sendMessage} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-2.5 px-6 cursor-pointer hover:bg-gold-bright transition-all min-h-[44px]">Send</button>
+                <button onClick={() => sendMessage()} disabled={chatLoading} className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-2.5 px-6 cursor-pointer hover:bg-gold-bright transition-all min-h-[44px] ${chatLoading ? 'opacity-50' : ''}`}>Send</button>
               </div>
             </div>
           )}
@@ -730,7 +831,6 @@ const DashboardPage = () => {
           {page === 'vault' && (
             <>
               <Card title="Document Vault" extra={<span className="font-mono text-[0.65rem] text-t3">Encrypted · Partner Access Only</span>}>
-                {/* Search and filter */}
                 <div className="flex gap-3 mb-5 max-md:flex-col">
                   <div className="flex-1 relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-t4 text-sm">🔍</span>
@@ -743,9 +843,8 @@ const DashboardPage = () => {
                   </select>
                 </div>
 
-                {/* Document groups */}
                 {filteredDocs.length === 0 ? (
-                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents match your search.</div>
+                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents yet. Documents are generated automatically as your portfolio grows.</div>
                 ) : (
                   <div className="flex flex-col gap-1">
                     {filteredDocs.map((doc, i) => {
