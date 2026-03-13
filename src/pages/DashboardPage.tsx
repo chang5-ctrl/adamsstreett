@@ -77,9 +77,9 @@ const DashboardPage = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [investFilter, setInvestFilter] = useState('all');
 
-  // Referral code generation
+  // Referral code generation — start with one auto-generated code, zero uses
   const [referralCodes, setReferralCodes] = useState([
-    { code: 'ASP-26-PE-7k9m2x-4K', sector: 'Private Equity', uses: 3, maxUses: 10, expires: 'Dec 31, 2026' },
+    { code: 'ASP-26-GE-' + Math.random().toString(36).substr(2, 6) + '-4K', sector: 'General', uses: 0, maxUses: 10, expires: 'Dec 31, 2026' },
   ]);
   const [referralInput, setReferralInput] = useState('');
   const [referralValidation, setReferralValidation] = useState<string | null>(null);
