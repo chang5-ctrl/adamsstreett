@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 
 const MetricsBar = () => {
-  const [returns, setReturns] = useState(84729441);
+  const [returns, setReturns] = useState(65847293441);
   const [partners, setPartners] = useState(1247);
 
   useEffect(() => {
-    const ri = setInterval(() => setReturns(r => r + Math.floor(Math.random() * 720 + 480)), 3000);
-    const pi = setInterval(() => setPartners(p => Math.max(1240, Math.min(1262, p + (Math.random() > 0.5 ? 1 : -1)))), 22000);
+    const ri = setInterval(() => setReturns(r => r + Math.floor(Math.random() * 7000 + 8000)), 3000);
+    const pi = setInterval(() => setPartners(p => Math.max(1240, Math.min(1265, p + (Math.random() > 0.5 ? 1 : -1)))), 20000);
     return () => { clearInterval(ri); clearInterval(pi); };
   }, []);
 
   const metrics = [
-    { label: 'Live Returns', value: `$${returns.toLocaleString()}`, change: '▲ +$847 every 3s' },
-    { label: 'Capital Deployed', value: '$1.24B', change: '▲ +$2.4M this week' },
+    { label: 'Total Returns Generated', value: `$${returns.toLocaleString()}`, change: '▲ Live · Updates every 3s' },
+    { label: 'Capital Deployed', value: '$4.8B', change: '▲ +$24M this week' },
     { label: 'Active Partners', value: partners.toLocaleString(), change: '▲ +14 this week' },
     { label: 'Investment Products', value: '21 Funds', change: '▲ 6 continents' },
     { label: 'Minimum Commitment', value: '$100,000', change: 'BTC · ETH · USDC', goldValue: true, grayChange: true },

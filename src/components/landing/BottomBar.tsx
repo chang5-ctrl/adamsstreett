@@ -5,8 +5,8 @@ const BottomBar = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCount(c => Math.max(1240, Math.min(1262, c + (Math.random() > 0.5 ? 1 : -1))));
-    }, 22000);
+      setCount(c => Math.max(1240, Math.min(1265, c + (Math.random() > 0.5 ? 1 : -1))));
+    }, 20000);
     return () => clearInterval(interval);
   }, []);
 
