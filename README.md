@@ -1,73 +1,99 @@
-# Welcome to your Lovable project
+# Adams Streett Partners Platform
 
-## Project info
+![Node.js](https://img.shields.io/badge/Node.js-runtime-green)
+![Next.js](https://img.shields.io/badge/Next.js-framework-black)
+![React](https://img.shields.io/badge/React-frontend-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-language-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-blue)
+![Vercel](https://img.shields.io/badge/Vercel-deployment-black)
+![Bitcoin](https://img.shields.io/badge/Bitcoin-supported-orange)
+![License](https://img.shields.io/badge/license-proprietary-red)
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+A modern digital investment platform providing institutional-grade access to diversified investment products, real-time portfolio monitoring, and secure fund allocation workflows.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Overview
 
-**Use Lovable**
+Investors can:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Create accounts
+- Authenticate securely
+- Access a portfolio dashboard
+- Allocate capital into investment products
+- Track investment performance in real-time
 
-Changes made via Lovable will be committed automatically to this repo.
+The platform is designed for scalability, security, and future expansion.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Core Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Secure user authentication and account management
+- Investment portfolio dashboard
+- Fund allocation engine
+- Transaction and investment history tracking
+- Administrative controls
+- Real-time portfolio monitoring
+- Secure database infrastructure
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Technology Stack
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+**Frontend:** React, Next.js, TypeScript  
+**Backend:** PostgreSQL, PLpgSQL  
+**Infrastructure:** Vercel deployment, GitHub version control  
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Platform Flow
+
+1. User creates an account  
+2. User completes authentication  
+3. User accesses the investment dashboard  
+4. User allocates capital into investment products  
+5. System processes and records investment transactions  
+6. Portfolio performance is tracked and displayed in real-time  
+
+---
+
+## System Architecture
+Ensures modularity, scalability, and efficient handling of financial operations.
+
+---
+
+## Security
+
+- Secure authentication mechanisms  
+- Role-based access control  
+- Encrypted database connections  
+- Input validation and data protection measures  
+
+---
+
+## Deployment
+
+Continuous deployment workflow:
+
+- Push updates to GitHub  
+- Automatic Vercel deployment  
+- PostgreSQL database for persistence  
+
+**Deployment Stack:**
+
+- Frontend Hosting: Vercel  
+- Version Control: GitHub  
+- Database: PostgreSQL  
+
+---
+
+## Development
+
+Run locally:
+## License
+
+Private proprietary software.
+```bash
+npm install
 npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
