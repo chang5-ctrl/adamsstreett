@@ -521,9 +521,9 @@ const DashboardPage = () => {
               <Card title="Staking Pools">
                 <div className="grid grid-cols-3 max-md:grid-cols-1 gap-px bg-[hsl(var(--b1))] -m-5">
                   {[
-                    { apy: '14%', name: 'Flex Pool', desc: '90 day lock period. Minimum $100,000.', tier: null },
-                    { apy: '22%', name: 'Growth Pool', desc: '180 day lock period. Minimum $100,000.', tier: null },
-                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $250,000.', tier: 'Silver+ Only', badge: '⏳ Waitlist Open' },
+                    { apy: '14%', name: 'Flex Pool', desc: '90 day lock period. Minimum $500.', tier: null },
+                    { apy: '22%', name: 'Growth Pool', desc: '180 day lock period. Minimum $3,000.', tier: 'Growth+ Only' },
+                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $5,000.', tier: 'Premium+ Only', badge: '⏳ Waitlist Open' },
                   ].map((p, i) => (
                     <div key={i} className="bg-s1 py-7 px-6 cursor-pointer hover:bg-s2 transition-colors">
                       <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-1">Annual Yield</div>
