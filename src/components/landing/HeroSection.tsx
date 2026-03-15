@@ -117,7 +117,7 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
                     </button>
                   ))}
                 </div>
-                <input type="range" min={100000} max={5000000} step={50000} value={simAmount}
+                <input type="range" min={500} max={100000} step={500} value={simAmount}
                   onChange={e => setSimAmount(Number(e.target.value))}
                   className="w-full accent-[hsl(43,55%,54%)] h-1 cursor-pointer" />
                 <div className="font-mono text-[1.4rem] text-gold mt-2">${simAmount.toLocaleString()}</div>
