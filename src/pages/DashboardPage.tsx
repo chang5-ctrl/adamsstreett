@@ -319,8 +319,8 @@ const DashboardPage = () => {
           {/* Tier Progress Bar */}
           <div className="px-5 py-4 border-b border-b1">
             <div className="flex justify-between items-center mb-1.5">
-              <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Bronze</span>
-              <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase">Next: Silver</span>
+              <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Starter</span>
+              <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase">Next: Growth</span>
             </div>
             <div className="w-full h-1.5 bg-s3">
               <div className="h-full bg-gold transition-all duration-500" style={{ width: '0%' }} />
