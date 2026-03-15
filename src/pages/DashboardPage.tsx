@@ -667,7 +667,7 @@ const DashboardPage = () => {
                 <div className="w-full max-w-[300px] h-2 bg-s3 mx-auto mb-2">
                   <div className="h-full bg-gold" style={{ width: '0%' }} />
                 </div>
-                <div className="font-mono text-[0.62rem] text-t4">Unlock: Apex Pool (35% APY) · Priority Processing · Early Access</div>
+                <div className="font-mono text-[0.62rem] text-t4">Unlock: Growth Pool (22% APY) · 5% Referral Commission · More Funds</div>
                 <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2 px-5 cursor-pointer hover:bg-gold hover:text-void transition-all mt-4 min-h-[40px]">View All Benefits →</button>
               </div>
               <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
