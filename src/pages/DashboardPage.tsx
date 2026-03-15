@@ -110,7 +110,7 @@ const DashboardPage = () => {
   }, [chatMessages]);
 
   const calcProjections = useCallback(() => {
-    if (!fundSelect || !amount || parseFloat(amount) < 100000) return { cons: '—', agg: '—' };
+    if (!fundSelect || !amount || parseFloat(amount) < 500) return { cons: '—', agg: '—' };
     const parts = fundSelect.split('|');
     const rates = parts[1].split('-');
     const consRate = parseFloat(rates[0]) / 100;
