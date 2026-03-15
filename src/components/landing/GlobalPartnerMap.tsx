@@ -13,9 +13,9 @@ const locations = [
 
 const recentJoins = [
   'T. OKONKWO just joined from Lagos',
-  'A. AL-SAUD committed $250K from Riyadh',
+  'A. AL-SAUD committed $5K from Riyadh',
   'B. SCHMIDT joined from Zurich',
-  'K. AL-RASHIDI committed $500K from Dubai',
+  'K. AL-RASHIDI committed $10K from Dubai',
   'C. NWOSU joined from Nairobi',
   'R. MENSAH committed $100K from Accra',
 ];
