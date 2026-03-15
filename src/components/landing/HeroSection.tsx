@@ -23,7 +23,7 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
 
   const avgRate = 0.273;
   const projected = Math.round(simAmount * Math.pow(1 + avgRate, simYears));
-  const presets = [100000, 250000, 500000, 1000000];
+  const presets = [500, 3000, 5000, 10000];
   const yearPresets = [1, 3, 5, 7, 10];
 
   // Generate chart points
