@@ -43,7 +43,7 @@ const SECTOR_CODES: Record<string, string> = {
 const CHAT_SUGGESTIONS = [
   'Which fund is best for me?',
   'How do staking pools work?',
-  'Calculate my returns on $100,000',
+  'Calculate my returns on $500',
   'How do I make a payment?',
 ];
 
@@ -70,7 +70,7 @@ const DashboardPage = () => {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [simAmount, setSimAmount] = useState('100000');
+  const [simAmount, setSimAmount] = useState('500');
   const [simFund, setSimFund] = useState('12|28');
   const [vaultSearch, setVaultSearch] = useState('');
   const [vaultFilter, setVaultFilter] = useState('all');
@@ -110,7 +110,7 @@ const DashboardPage = () => {
   }, [chatMessages]);
 
   const calcProjections = useCallback(() => {
-    if (!fundSelect || !amount || parseFloat(amount) < 100000) return { cons: '—', agg: '—' };
+    if (!fundSelect || !amount || parseFloat(amount) < 500) return { cons: '—', agg: '—' };
     const parts = fundSelect.split('|');
     const rates = parts[1].split('-');
     const consRate = parseFloat(rates[0]) / 100;
@@ -138,7 +138,7 @@ const DashboardPage = () => {
 
   const submitInvestment = () => {
     if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
-    if (!amount || parseFloat(amount) < 100000) { setInvestMsg({ text: 'Minimum commitment is $100,000.', type: 'error' }); return; }
+    if (!amount || parseFloat(amount) < 500) { setInvestMsg({ text: 'Minimum commitment is $500.', type: 'error' }); return; }
     setInvestLoading(true);
     const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
     setRefId(ref);
@@ -169,13 +169,13 @@ const DashboardPage = () => {
       if (lower.includes('best') && lower.includes('fund') || lower.includes('which fund') || lower.includes('recommend')) {
         response = 'Based on a balanced risk approach, I\'d recommend starting with the **Adams Streett General Fund** at **12–28% APY** — it\'s our flagship diversified strategy with a 6-month horizon. For higher conviction, the **Private Equity Pool** offers **18–40% APY** over 12+ months. What\'s your risk tolerance and investment horizon? *Projections are illustrative.*';
       } else if (lower.includes('staking') || lower.includes('pool') || lower.includes('lock')) {
-        response = 'We offer three staking pools:\n\n— **Flex Pool**: 14% APY, 90-day lock, min $100,000\n— **Growth Pool**: 22% APY, 180-day lock, min $100,000\n— **Apex Pool**: 35% APY, 365-day lock, min $250,000 (Silver+ only)\n\nAll pools compound daily. Navigate to the Staking page to commit. *Rates are target yields, not guaranteed.*';
+        response = 'We offer three staking pools:\n\n— **Flex Pool**: 14% APY, 90-day lock, min $500\n— **Growth Pool**: 22% APY, 180-day lock, min $3,000\n— **Apex Pool**: 35% APY, 365-day lock, min $5,000 (Premium+ only)\n\nAll pools compound daily. Navigate to the Staking page to commit. *Rates are target yields, not guaranteed.*';
       } else if (lower.includes('payment') || lower.includes('pay') || lower.includes('wallet') || lower.includes('btc') || lower.includes('eth') || lower.includes('usdc')) {
         response = 'We accept **BTC**, **ETH**, and **USDC** (ERC-20). After submitting a commitment on the Invest page, send your exact amount to the displayed wallet address. Our system detects on-chain payments automatically. Portfolio activates upon confirmation — typically within minutes for ETH/USDC and ~30 minutes for BTC.';
-      } else if (lower.includes('return') || lower.includes('calculate') || lower.includes('$100') || lower.includes('100k') || lower.includes('100,000')) {
-        response = 'On **$100,000** in the General Fund:\n\n— **Year 1**: $112,000–$128,000\n— **Year 3**: $148,000–$197,000\n\nFor higher returns, the African Unicorn Fund projects **$122,000–$180,000** in Year 1. Use the Returns Simulator for custom projections. *All projections are illustrative.*';
+      } else if (lower.includes('return') || lower.includes('calculate') || lower.includes('$500') || lower.includes('500')) {
+        response = 'On **$500** in the General Fund:\n\n— **Year 1**: $560–$640\n— **Year 3**: $740–$985\n\nFor higher returns, the African Unicorn Fund projects **$610–$900** in Year 1. Use the Returns Simulator for custom projections. *All projections are illustrative.*';
       } else if (lower.includes('tier') || lower.includes('bronze') || lower.includes('silver') || lower.includes('gold')) {
-        response = 'Partner tiers unlock exclusive benefits:\n\n— **Bronze**: $100K–$499K — Access to all 21 funds\n— **Silver**: $500K–$999K — Apex Pool (35% APY), priority processing, early access\n— **Gold**: $1M+ — Dedicated advisor, custom fund access, zero fees on first $50K\n\nYour tier is based on total committed capital across all funds.';
+        response = 'Investment tiers unlock exclusive benefits:\n\n— **Starter**: $500+ — General Fund, DeFi Yield, Fixed Income\n— **Growth**: $3,000+ — All funds except Frontier & Longevity, 5% referral\n— **Premium**: $5,000+ — ALL 21 funds, Apex Pool, priority processing\n— **Elite**: $10,000+ — Platinum status, ASP Black Card, dedicated concierge\n\nYour tier is based on total committed capital across all funds.';
       } else if (lower.includes('referral') || lower.includes('refer') || lower.includes('commission')) {
         response = 'You earn **5% commission** on every commitment made by a partner you refer. Your referral code is on the Referral page — share it via the unique link. Referred partners also receive Silver tier benefits for their first 90 days. Minimum payout is $1,000, processed monthly.';
       } else if (lower.includes('halal') || lower.includes('sharia') || lower.includes('islamic')) {
@@ -319,13 +319,13 @@ const DashboardPage = () => {
           {/* Tier Progress Bar */}
           <div className="px-5 py-4 border-b border-b1">
             <div className="flex justify-between items-center mb-1.5">
-              <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Bronze</span>
-              <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase">Next: Silver</span>
+              <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Starter</span>
+              <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase">Next: Growth</span>
             </div>
             <div className="w-full h-1.5 bg-s3">
               <div className="h-full bg-gold transition-all duration-500" style={{ width: '0%' }} />
             </div>
-            <div className="font-mono text-[0.55rem] text-t4 mt-1">$0 committed · Need $500K for Silver</div>
+            <div className="font-mono text-[0.55rem] text-t4 mt-1">$0 committed · Need $3K for Growth tier</div>
           </div>
 
           {SIDEBAR_ITEMS.map((g, gi) => (
@@ -341,7 +341,7 @@ const DashboardPage = () => {
             </div>
           ))}
           <div className="mt-auto border-t border-b1 py-4 px-5">
-            <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Bronze</div>
+            <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Starter</div>
             <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">New Partner</div>
             <button onClick={() => navigate('/auth')} className="font-label text-[0.62rem] text-t4 tracking-[0.12em] uppercase cursor-pointer hover:text-asp-red transition-colors bg-transparent border-none p-0">Sign Out</button>
           </div>
@@ -432,8 +432,8 @@ const DashboardPage = () => {
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
-                      <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
-                      <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $100,000</span>
+                      <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
+                      <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $500</span>
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
@@ -521,9 +521,9 @@ const DashboardPage = () => {
               <Card title="Staking Pools">
                 <div className="grid grid-cols-3 max-md:grid-cols-1 gap-px bg-[hsl(var(--b1))] -m-5">
                   {[
-                    { apy: '14%', name: 'Flex Pool', desc: '90 day lock period. Minimum $100,000.', tier: null },
-                    { apy: '22%', name: 'Growth Pool', desc: '180 day lock period. Minimum $100,000.', tier: null },
-                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $250,000.', tier: 'Silver+ Only', badge: '⏳ Waitlist Open' },
+                    { apy: '14%', name: 'Flex Pool', desc: '90 day lock period. Minimum $500.', tier: null },
+                    { apy: '22%', name: 'Growth Pool', desc: '180 day lock period. Minimum $3,000.', tier: 'Growth+ Only' },
+                    { apy: '35%', name: 'Apex Pool', desc: '365 day lock period. Minimum $5,000.', tier: 'Premium+ Only', badge: '⏳ Waitlist Open' },
                   ].map((p, i) => (
                     <div key={i} className="bg-s1 py-7 px-6 cursor-pointer hover:bg-s2 transition-colors">
                       <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-1">Annual Yield</div>
@@ -662,12 +662,12 @@ const DashboardPage = () => {
             <>
               <div className="border border-gold bg-gold-glow p-8 text-center mb-6">
                 <div className="font-label text-[0.62rem] text-t3 tracking-[0.2em] uppercase mb-2">Partner Tier</div>
-                <div className="font-heading text-[2rem] text-gold">Bronze</div>
-                <div className="font-body text-[0.8rem] text-t3 mt-1 mb-3">$500,000 away from Silver tier</div>
+                <div className="font-heading text-[2rem] text-gold">Starter</div>
+                <div className="font-body text-[0.8rem] text-t3 mt-1 mb-3">$3,000 away from Growth tier</div>
                 <div className="w-full max-w-[300px] h-2 bg-s3 mx-auto mb-2">
                   <div className="h-full bg-gold" style={{ width: '0%' }} />
                 </div>
-                <div className="font-mono text-[0.62rem] text-t4">Unlock: Apex Pool (35% APY) · Priority Processing · Early Access</div>
+                <div className="font-mono text-[0.62rem] text-t4">Unlock: Growth Pool (22% APY) · 5% Referral Commission · More Funds</div>
                 <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2 px-5 cursor-pointer hover:bg-gold hover:text-void transition-all mt-4 min-h-[40px]">View All Benefits →</button>
               </div>
               <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
@@ -705,7 +705,7 @@ const DashboardPage = () => {
                 <KPI label="Your Rank" value="—" cls="text-gold" />
                 <KPI label="Total Committed" value="$0.00" />
                 <KPI label="Percentile" value="—" />
-                <KPI label="Tier" value="Bronze" cls="text-gold" />
+                <KPI label="Tier" value="Starter" cls="text-gold" />
               </div>
               <Card title="Top Partners · Global Leaderboard" extra={<span className="font-mono text-[0.65rem] text-t3">Anonymized · Updated daily</span>}>
                 <div className="overflow-x-auto -m-5">

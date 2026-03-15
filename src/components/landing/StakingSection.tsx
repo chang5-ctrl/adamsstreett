@@ -1,12 +1,12 @@
 const pools = [
   { apy: '14%', name: 'Flex Pool', desc: '90-day lock period. Ideal for partners seeking predictable short-term yield without long-term commitment exposure.', rows: [
-    { l: 'Lock Period', v: '90 Days' }, { l: 'Minimum', v: '$100,000' }, { l: '$100K Matures To', v: '$103,500', green: true }, { l: 'Availability', v: 'All Tiers', green: true }
+    { l: 'Lock Period', v: '90 Days' }, { l: 'Minimum', v: '$500' }, { l: '$500 Matures To', v: '$517.50', green: true }, { l: 'Availability', v: 'All Tiers', green: true }
   ]},
   { apy: '22%', name: 'Growth Pool', desc: '180-day lock period. Our most popular staking instrument for partners prioritising compound growth over liquidity.', rows: [
-    { l: 'Lock Period', v: '180 Days' }, { l: 'Minimum', v: '$100,000' }, { l: '$100K Matures To', v: '$111,000', green: true }, { l: 'Availability', v: 'All Tiers', green: true }
+    { l: 'Lock Period', v: '180 Days' }, { l: 'Minimum', v: '$3,000' }, { l: '$3K Matures To', v: '$3,330', green: true }, { l: 'Availability', v: 'Growth+ Tiers', green: true }
   ]},
-  { apy: '35%', name: 'Apex Pool', desc: '365-day lock period. Exclusively available to Silver and Gold tier partners. Maximum yield instrument on the platform.', rows: [
-    { l: 'Lock Period', v: '365 Days' }, { l: 'Minimum', v: '$250,000' }, { l: '$250K Matures To', v: '$337,500', gold: true }, { l: 'Availability', v: 'Silver+ Only', gold: true }
+  { apy: '35%', name: 'Apex Pool', desc: '365-day lock period. Exclusively available to Premium and Elite tier partners. Maximum yield instrument on the platform.', rows: [
+    { l: 'Lock Period', v: '365 Days' }, { l: 'Minimum', v: '$5,000' }, { l: '$5K Matures To', v: '$6,750', gold: true }, { l: 'Availability', v: 'Premium+ Only', gold: true }
   ]},
 ];
 

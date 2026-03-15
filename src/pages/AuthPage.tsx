@@ -54,14 +54,14 @@ const AuthPage = () => {
           <div className="absolute top-[-200px] right-[-200px] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(201,168,76,0.04)_0%,transparent_70%)] pointer-events-none" />
           <div className="flex flex-col gap-1">
             <span className="font-heading text-[1.1rem] font-normal text-gold tracking-[0.08em]">Adams Streett Partners</span>
-            <span className="font-label text-[0.55rem] text-t3 tracking-[0.3em] uppercase">Private Investment · Est. 2024</span>
+            <span className="font-label text-[0.55rem] text-t3 tracking-[0.3em] uppercase">Private Investment · Est. 1972</span>
           </div>
           <div className="flex-1 flex flex-col justify-center py-12">
             <div className="font-label text-[0.65rem] text-gold tracking-[0.25em] uppercase mb-6">Partner Access Portal</div>
             <div className="font-heading text-[clamp(2.2rem,3.5vw,3.5rem)] font-light leading-[1.1] tracking-[-0.02em] text-t1">Where Elite</div>
             <div className="font-heading text-[clamp(2.2rem,3.5vw,3.5rem)] font-light leading-[1.1] tracking-[-0.02em] text-t1">Capital Meets</div>
             <div className="font-heading text-[clamp(2.2rem,3.5vw,3.5rem)] font-light italic leading-[1.1] tracking-[-0.02em] text-gold mb-8">Opportunity</div>
-            <p className="font-body text-[0.9rem] text-t3 leading-[1.8] max-w-[380px] mb-12">Institutional-grade investment access for accredited investors, entertainers, athletes, and corporate brands. Minimum commitment $100,000.</p>
+            <p className="font-body text-[0.9rem] text-t3 leading-[1.8] max-w-[380px] mb-12">Institutional-grade investment access for accredited investors, entertainers, athletes, and corporate brands. Start from just $500.</p>
             <div className="flex flex-col border border-b1">
               {[
                 { label: 'Active Partners', value: '1,247', cls: '' },
