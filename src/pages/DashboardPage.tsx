@@ -138,7 +138,7 @@ const DashboardPage = () => {
 
   const submitInvestment = () => {
     if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
-    if (!amount || parseFloat(amount) < 100000) { setInvestMsg({ text: 'Minimum commitment is $100,000.', type: 'error' }); return; }
+    if (!amount || parseFloat(amount) < 500) { setInvestMsg({ text: 'Minimum commitment is $500.', type: 'error' }); return; }
     setInvestLoading(true);
     const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
     setRefId(ref);
