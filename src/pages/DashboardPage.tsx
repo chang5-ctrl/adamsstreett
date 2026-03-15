@@ -70,7 +70,7 @@ const DashboardPage = () => {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [simAmount, setSimAmount] = useState('100000');
+  const [simAmount, setSimAmount] = useState('500');
   const [simFund, setSimFund] = useState('12|28');
   const [vaultSearch, setVaultSearch] = useState('');
   const [vaultFilter, setVaultFilter] = useState('all');

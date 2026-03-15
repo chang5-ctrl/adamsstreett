@@ -17,7 +17,7 @@ const recentJoins = [
   'B. SCHMIDT joined from Zurich',
   'K. AL-RASHIDI committed $10K from Dubai',
   'C. NWOSU joined from Nairobi',
-  'R. MENSAH committed $100K from Accra',
+  'R. MENSAH committed $3K from Accra',
 ];
 
 const GlobalPartnerMap = () => {
