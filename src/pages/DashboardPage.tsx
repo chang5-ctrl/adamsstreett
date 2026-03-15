@@ -325,7 +325,7 @@ const DashboardPage = () => {
             <div className="w-full h-1.5 bg-s3">
               <div className="h-full bg-gold transition-all duration-500" style={{ width: '0%' }} />
             </div>
-            <div className="font-mono text-[0.55rem] text-t4 mt-1">$0 committed · Need $500K for Silver</div>
+            <div className="font-mono text-[0.55rem] text-t4 mt-1">$0 committed · Need $3K for Growth tier</div>
           </div>
 
           {SIDEBAR_ITEMS.map((g, gi) => (
