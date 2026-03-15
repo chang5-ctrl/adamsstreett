@@ -54,7 +54,7 @@ const AuthPage = () => {
           <div className="absolute top-[-200px] right-[-200px] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(201,168,76,0.04)_0%,transparent_70%)] pointer-events-none" />
           <div className="flex flex-col gap-1">
             <span className="font-heading text-[1.1rem] font-normal text-gold tracking-[0.08em]">Adams Streett Partners</span>
-            <span className="font-label text-[0.55rem] text-t3 tracking-[0.3em] uppercase">Private Investment · Est. 2024</span>
+            <span className="font-label text-[0.55rem] text-t3 tracking-[0.3em] uppercase">Private Investment · Est. 1972</span>
           </div>
           <div className="flex-1 flex flex-col justify-center py-12">
             <div className="font-label text-[0.65rem] text-gold tracking-[0.25em] uppercase mb-6">Partner Access Portal</div>
