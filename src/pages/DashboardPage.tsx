@@ -341,7 +341,7 @@ const DashboardPage = () => {
             </div>
           ))}
           <div className="mt-auto border-t border-b1 py-4 px-5">
-            <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Bronze</div>
+            <div className="font-label text-[0.55rem] tracking-[0.15em] uppercase py-0.5 px-2 border border-gold text-gold inline-block mb-2">Starter</div>
             <div className="font-mono text-[0.65rem] text-t3 mb-3 truncate">New Partner</div>
             <button onClick={() => navigate('/auth')} className="font-label text-[0.62rem] text-t4 tracking-[0.12em] uppercase cursor-pointer hover:text-asp-red transition-colors bg-transparent border-none p-0">Sign Out</button>
           </div>
