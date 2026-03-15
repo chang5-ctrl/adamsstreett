@@ -432,8 +432,8 @@ const DashboardPage = () => {
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
-                      <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100000" min={100000} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
-                      <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $100,000</span>
+                      <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
+                      <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $500</span>
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
