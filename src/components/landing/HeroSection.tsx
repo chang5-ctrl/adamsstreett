@@ -53,7 +53,7 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
         <div className="font-heading text-[clamp(2.4rem,5.5vw,5.8rem)] font-light leading-[0.92] tracking-[-0.025em] text-t1 mb-1 animate-fadeUp-1">Capital Meets</div>
         <div className="font-heading text-[clamp(2.4rem,5.5vw,5.8rem)] font-light italic leading-[0.92] tracking-[-0.025em] mb-9 animate-fadeUp-2 hero-gold-gradient">Opportunity</div>
         <p className="text-base text-t3 leading-[1.85] max-w-[440px] mb-11 animate-fadeUp-3">
-          Institutional-grade investment access for accredited investors, entertainers, athletes, and corporate brands. Minimum commitment $100,000.
+          Institutional-grade investment access for accredited investors, entertainers, athletes, and corporate brands. Start from just $500.
         </p>
         <div className="flex items-center gap-4 flex-wrap animate-fadeUp-4">
           <button onClick={() => setShowSimulator(true)} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-[15px] px-8 max-md:px-6 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px]">
