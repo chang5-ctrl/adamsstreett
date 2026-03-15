@@ -662,7 +662,7 @@ const DashboardPage = () => {
             <>
               <div className="border border-gold bg-gold-glow p-8 text-center mb-6">
                 <div className="font-label text-[0.62rem] text-t3 tracking-[0.2em] uppercase mb-2">Partner Tier</div>
-                <div className="font-heading text-[2rem] text-gold">Bronze</div>
+                <div className="font-heading text-[2rem] text-gold">Starter</div>
                 <div className="font-body text-[0.8rem] text-t3 mt-1 mb-3">$500,000 away from Silver tier</div>
                 <div className="w-full max-w-[300px] h-2 bg-s3 mx-auto mb-2">
                   <div className="h-full bg-gold" style={{ width: '0%' }} />
