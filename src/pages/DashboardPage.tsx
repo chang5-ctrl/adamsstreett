@@ -43,7 +43,7 @@ const SECTOR_CODES: Record<string, string> = {
 const CHAT_SUGGESTIONS = [
   'Which fund is best for me?',
   'How do staking pools work?',
-  'Calculate my returns on $100,000',
+  'Calculate my returns on $500',
   'How do I make a payment?',
 ];
 
