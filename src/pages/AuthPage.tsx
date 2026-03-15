@@ -61,7 +61,7 @@ const AuthPage = () => {
             <div className="font-heading text-[clamp(2.2rem,3.5vw,3.5rem)] font-light leading-[1.1] tracking-[-0.02em] text-t1">Where Elite</div>
             <div className="font-heading text-[clamp(2.2rem,3.5vw,3.5rem)] font-light leading-[1.1] tracking-[-0.02em] text-t1">Capital Meets</div>
             <div className="font-heading text-[clamp(2.2rem,3.5vw,3.5rem)] font-light italic leading-[1.1] tracking-[-0.02em] text-gold mb-8">Opportunity</div>
-            <p className="font-body text-[0.9rem] text-t3 leading-[1.8] max-w-[380px] mb-12">Institutional-grade investment access for accredited investors, entertainers, athletes, and corporate brands. Minimum commitment $100,000.</p>
+            <p className="font-body text-[0.9rem] text-t3 leading-[1.8] max-w-[380px] mb-12">Institutional-grade investment access for accredited investors, entertainers, athletes, and corporate brands. Start from just $500.</p>
             <div className="flex flex-col border border-b1">
               {[
                 { label: 'Active Partners', value: '1,247', cls: '' },

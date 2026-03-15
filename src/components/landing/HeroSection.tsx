@@ -82,7 +82,7 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
           ))}
         </div>
         <div className="h-[200px] border-t border-b1 relative overflow-hidden">
-          <div className="font-label text-[0.55rem] text-t4 tracking-[0.15em] uppercase absolute top-3 left-5">General Fund Performance · 2024–2026</div>
+          <div className="font-label text-[0.55rem] text-t4 tracking-[0.15em] uppercase absolute top-3 left-5">General Fund Performance · 1972–2026</div>
           <svg className="w-full h-full absolute bottom-0" viewBox="0 0 600 180" preserveAspectRatio="none">
             <defs>
               <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">

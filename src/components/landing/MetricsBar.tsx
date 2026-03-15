@@ -15,7 +15,7 @@ const MetricsBar = () => {
     { label: 'Capital Deployed', value: '$4.8B', change: '▲ +$24M this week' },
     { label: 'Active Partners', value: partners.toLocaleString(), change: '▲ +14 this week' },
     { label: 'Investment Products', value: '21 Funds', change: '▲ 6 continents' },
-    { label: 'Minimum Commitment', value: '$100,000', change: 'BTC · ETH · USDC', goldValue: true, grayChange: true },
+    { label: 'Minimum Commitment', value: '$500', change: 'BTC · ETH · USDC', goldValue: true, grayChange: true },
   ];
 
   return (

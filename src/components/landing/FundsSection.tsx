@@ -18,8 +18,8 @@ const fundBadges: Record<string, { text: string; color: string }> = {
 };
 
 const tierLocked: Record<string, string> = {
-  'Alpha Fund': '👑 Silver+ Only',
-  'IPO Access Fund': '👑 Silver+ Only',
+  'Alpha Fund': '👑 Premium+ Only',
+  'IPO Access Fund': '👑 Premium+ Only',
 };
 
 const fundGradients: Record<string, string> = {
@@ -50,7 +50,7 @@ const FundsSection = () => {
         <div className="font-label text-[0.62rem] text-gold tracking-[0.25em] uppercase mb-3.5">Investment Products</div>
         <h2 className="font-heading text-[clamp(1.8rem,2.8vw,2.8rem)] font-light tracking-[-0.015em] leading-[1.15] mb-5 text-t1">21 Institutional-Grade Funds</h2>
         <div className="w-12 h-px bg-gold mb-4" />
-        <p className="text-[0.9rem] text-t3 leading-[1.9] max-w-[540px]">From private equity to space technology. From Sharia-compliant instruments to African venture. One platform, unlimited opportunity.</p>
+        <p className="text-[0.9rem] text-t3 leading-[1.9] max-w-[540px]">From private equity to space technology. From Sharia-compliant instruments to African venture. Start from $500.</p>
       </div>
       <div className="flex justify-between items-center mb-10 max-sm:flex-col max-sm:gap-4 max-sm:items-start">
         <div className="flex border border-b1 max-sm:flex-wrap">
@@ -71,7 +71,6 @@ const FundsSection = () => {
           return (
             <div key={i} className="bg-s1 cursor-pointer hover:bg-s2 transition-colors relative group overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-0 bg-gold transition-all duration-200 group-hover:w-[3px] z-10" />
-              {/* Gradient overlay for featured funds */}
               {gradient && (
                 <div className={`absolute inset-0 bg-gradient-to-b ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
               )}
@@ -84,7 +83,6 @@ const FundsSection = () => {
                     <span className="font-label text-[0.52rem] tracking-[0.12em] uppercase py-0.5 px-2 border border-b2 text-t3">{fund.badge}</span>
                     <span className={`font-label text-[0.52rem] tracking-[0.1em] uppercase py-0.5 px-2 border ${riskColors[fund.risk]}`}>{fund.riskLabel}</span>
                   </div>
-                  {/* Scarcity/urgency badges */}
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {badge && <span className={`font-label text-[0.5rem] tracking-[0.1em] uppercase py-0.5 px-2 border ${badge.color}`}>{badge.text}</span>}
                     {tier && <span className="font-label text-[0.5rem] tracking-[0.1em] uppercase py-0.5 px-2 border border-gold text-gold">{tier}</span>}
@@ -94,16 +92,16 @@ const FundsSection = () => {
                   <div className="font-label text-[0.55rem] text-t4 tracking-[0.15em] uppercase mb-1">Target APY</div>
                   <div className="font-mono text-[1.9rem] text-gold tracking-[-0.02em] mb-4">{fund.apy}</div>
                   <div className="flex justify-between py-[7px] border-b border-b1">
-                    <span className="font-body text-[0.72rem] text-t3">$100K → 1 Year</span>
+                    <span className="font-body text-[0.72rem] text-t3">$500 → 1 Year</span>
                     <span className="font-mono text-[0.72rem] text-asp-green">{fund.returns1y}</span>
                   </div>
                   <div className="flex justify-between py-[7px] border-b border-b1">
-                    <span className="font-body text-[0.72rem] text-t3">$100K → 3 Years</span>
+                    <span className="font-body text-[0.72rem] text-t3">$500 → 3 Years</span>
                     <span className="font-mono text-[0.72rem] text-asp-green">{fund.returns3y}</span>
                   </div>
                   <div className="flex justify-between py-[7px]">
-                    <span className="font-body text-[0.72rem] text-t3">Horizon</span>
-                    <span className="font-mono text-[0.72rem] text-t2">{fund.horizon}</span>
+                    <span className="font-body text-[0.72rem] text-t3">Minimum</span>
+                    <span className="font-mono text-[0.72rem] text-gold">From $500</span>
                   </div>
                 </div>
                 <div className="py-3.5 px-6 border-t border-b1 font-label text-[0.55rem] text-t4 tracking-[0.08em] flex justify-between items-center">
