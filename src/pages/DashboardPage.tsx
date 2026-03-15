@@ -705,7 +705,7 @@ const DashboardPage = () => {
                 <KPI label="Your Rank" value="—" cls="text-gold" />
                 <KPI label="Total Committed" value="$0.00" />
                 <KPI label="Percentile" value="—" />
-                <KPI label="Tier" value="Bronze" cls="text-gold" />
+                <KPI label="Tier" value="Starter" cls="text-gold" />
               </div>
               <Card title="Top Partners · Global Leaderboard" extra={<span className="font-mono text-[0.65rem] text-t3">Anonymized · Updated daily</span>}>
                 <div className="overflow-x-auto -m-5">
