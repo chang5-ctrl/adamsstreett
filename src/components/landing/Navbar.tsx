@@ -40,7 +40,7 @@ const Navbar = ({ onScrollTo }: NavbarProps) => {
           <span className="font-heading text-[1.15rem] font-medium text-gold tracking-[0.05em] border border-gold-dim px-2.5 py-1">ASP</span>
           <div className="flex flex-col gap-px">
             <span className="font-label text-[0.72rem] text-t2 tracking-[0.15em] uppercase">Adams Streett Partners</span>
-            <span className="font-label text-[0.5rem] text-t4 tracking-[0.2em] uppercase">Private Investment · Est. 2024</span>
+            <span className="font-label text-[0.5rem] text-t4 tracking-[0.2em] uppercase">Private Investment · Est. 1972</span>
           </div>
         </Link>
 
