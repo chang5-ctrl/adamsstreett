@@ -38,16 +38,16 @@ export const FUNDS: Fund[] = [
 ];
 
 export const TICKER_ITEMS = [
-  { name: 'K. AL-RASHIDI', fund: 'Frontier Fund', amount: '$250,000' },
-  { name: 'T. OKONKWO', fund: 'Royalties Fund', amount: '$100,000' },
-  { name: 'M. BLACKWOOD', fund: 'Luxury Assets', amount: '$500,000' },
-  { name: 'S. AL-ZAHRANI', fund: 'Forex Alpha', amount: '$100,000' },
-  { name: 'D. ASANTE', fund: 'African Unicorn', amount: '$500,000' },
-  { name: 'R. MENSAH', fund: 'Sports Capital', amount: '$250,000' },
-  { name: 'A. AL-SAUD', fund: 'Halal Fund', amount: '$100,000' },
-  { name: 'B. SCHMIDT', fund: 'Private Equity', amount: '$750,000' },
-  { name: 'C. NWOSU', fund: 'Web3 Infrastructure', amount: '$150,000' },
-  { name: 'F. DIMITRIOU', fund: 'Longevity Fund', amount: '$250,000' },
+  { name: 'K. AL-RASHIDI', fund: 'Frontier Fund', amount: '$7,500' },
+  { name: 'T. OKONKWO', fund: 'Royalties Fund', amount: '$3,000' },
+  { name: 'M. BLACKWOOD', fund: 'Luxury Assets', amount: '$10,000' },
+  { name: 'S. AL-ZAHRANI', fund: 'Forex Alpha', amount: '$5,000' },
+  { name: 'D. ASANTE', fund: 'African Unicorn', amount: '$10,000' },
+  { name: 'R. MENSAH', fund: 'Sports Capital', amount: '$5,000' },
+  { name: 'A. AL-SAUD', fund: 'Halal Fund', amount: '$3,000' },
+  { name: 'B. SCHMIDT', fund: 'Private Equity', amount: '$10,000' },
+  { name: 'C. NWOSU', fund: 'Web3 Infrastructure', amount: '$5,000' },
+  { name: 'F. DIMITRIOU', fund: 'Longevity Fund', amount: '$7,500' },
 ];
 
 export const WALLETS = {
