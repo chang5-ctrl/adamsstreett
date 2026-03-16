@@ -404,32 +404,59 @@ const DashboardPage = () => {
           {/* INVEST */}
           {page === 'invest' && (
             <>
-              {/* Fund filter buttons */}
-              <div className="flex gap-px bg-[hsl(var(--b1))] mb-5 flex-wrap">
-                {[
-                  { key: 'all', label: 'All' },
-                  { key: 'income', label: 'Income' },
-                  { key: 'growth', label: 'Growth' },
-                  { key: 'frontier', label: 'Frontier' },
-                  { key: 'ethical', label: 'Ethical' },
-                ].map(c => (
-                  <button key={c.key} onClick={() => setInvestFilter(c.key)}
-                    className={`font-label text-[0.6rem] tracking-[0.12em] uppercase py-2.5 px-5 cursor-pointer transition-all min-h-[40px] ${investFilter === c.key ? 'bg-gold text-void' : 'bg-s1 text-t3 hover:bg-s2'}`}>
-                    {c.label}
-                  </button>
-                ))}
+              {/* Fund filter tabs */}
+              <div className="mb-3">
+                <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Select Fund</div>
+                <div className="flex gap-px bg-[hsl(var(--b1))] mb-4 flex-wrap">
+                  {[
+                    { key: 'all', label: 'All' },
+                    { key: 'income', label: 'Income' },
+                    { key: 'growth', label: 'Growth' },
+                    { key: 'frontier', label: 'Frontier' },
+                    { key: 'ethical', label: 'Ethical' },
+                  ].map(c => (
+                    <button key={c.key} onClick={() => setInvestFilter(c.key)}
+                      className={`font-label text-[0.6rem] tracking-[0.12em] uppercase py-2.5 px-5 cursor-pointer transition-all min-h-[40px] ${investFilter === c.key ? 'bg-gold text-void' : 'bg-s1 text-t3 hover:bg-s2'}`}>
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Fund picker grid */}
+                <div className="grid grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-2">
+                  {investFilteredFunds.map((f, i) => {
+                    const isSelected = fundSelect === f.selectValue;
+                    const riskColors: Record<string, string> = {
+                      low: 'text-[#86efac] border-[#86efac]/30',
+                      mod: 'text-asp-amber border-[hsl(var(--amber))]/30',
+                      high: 'text-[#fca5a5] border-[hsl(var(--red))]/30',
+                      top: 'text-[#f87171] border-[#f87171]/30',
+                    };
+                    const catLabels: Record<string, string> = { income: 'Income', growth: 'Growth', frontier: 'Frontier', ethical: 'Ethical' };
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setFundSelect(f.selectValue);
+                          setTimeout(() => document.getElementById('invest-amount-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+                        }}
+                        className={`bg-s1 border p-4 cursor-pointer transition-all ${isSelected ? 'border-gold bg-gold-glow shadow-[0_0_20px_rgba(201,168,76,0.1)]' : 'border-b1 hover:border-b2 opacity-80 hover:opacity-100'}`}
+                      >
+                        <div className="flex justify-between items-start mb-2 gap-2">
+                          <span className="font-heading text-[0.88rem] text-t1 leading-tight">{f.name}</span>
+                          <span className={`font-label text-[0.5rem] tracking-[0.1em] uppercase border py-0.5 px-1.5 whitespace-nowrap ${riskColors[f.risk] || 'text-t3 border-b1'}`}>{f.riskLabel}</span>
+                        </div>
+                        <div className="font-mono text-[1.1rem] text-gold mb-2">{f.apy} <span className="text-[0.6rem] text-t3">APY</span></div>
+                        <span className="font-label text-[0.5rem] tracking-[0.1em] uppercase text-t4 border border-b1 py-0.5 px-1.5">{catLabels[f.cat] || f.cat}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <Card title="New Investment Commitment">
                 <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
                   <div>
-                    <div className="flex flex-col gap-2 mb-5">
-                      <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
-                      <select value={fundSelect} onChange={e => setFundSelect(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                        <option value="">— Choose a fund —</option>
-                        {investFilteredFunds.map((f, i) => <option key={i} value={f.selectValue}>{f.selectLabel}</option>)}
-                      </select>
-                    </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
                       <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
