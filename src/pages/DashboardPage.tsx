@@ -457,9 +457,15 @@ const DashboardPage = () => {
               <Card title="New Investment Commitment">
                 <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
                   <div>
+                    {fundSelect && (
+                      <div className="bg-s2 border border-b1 p-3 mb-5">
+                        <div className="font-label text-[0.55rem] text-t3 tracking-[0.12em] uppercase mb-1">Selected Fund</div>
+                        <div className="font-heading text-[0.95rem] text-gold">{FUNDS.find(f => f.selectValue === fundSelect)?.name || '—'}</div>
+                      </div>
+                    )}
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
-                      <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
+                      <input id="invest-amount-input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                       <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $500</span>
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
