@@ -57,6 +57,9 @@ const DashboardPage = () => {
   const [selectedPayment, setSelectedPayment] = useState('btc');
   const [fundSelect, setFundSelect] = useState('');
   const [amount, setAmount] = useState('');
+  const [presetAmount, setPresetAmount] = useState<number | null>(null);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const customInputRef = useRef<HTMLInputElement>(null);
   const [horizon, setHorizon] = useState('12');
   const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [investLoading, setInvestLoading] = useState(false);
