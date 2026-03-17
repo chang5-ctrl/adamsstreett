@@ -569,7 +569,7 @@ const DashboardPage = () => {
                     className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
                     {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
                   </button>
-                  <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
+                  <button onClick={() => { setFundSelect(''); setAmount(''); setPresetAmount(null); setShowCustomInput(false); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
                 </div>
               </Card>
             </>
