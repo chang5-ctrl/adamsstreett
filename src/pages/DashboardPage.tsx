@@ -57,6 +57,9 @@ const DashboardPage = () => {
   const [selectedPayment, setSelectedPayment] = useState('btc');
   const [fundSelect, setFundSelect] = useState('');
   const [amount, setAmount] = useState('');
+  const [presetAmount, setPresetAmount] = useState<number | null>(null);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const customInputRef = useRef<HTMLInputElement>(null);
   const [horizon, setHorizon] = useState('12');
   const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [investLoading, setInvestLoading] = useState(false);
@@ -465,8 +468,32 @@ const DashboardPage = () => {
                     )}
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Commitment Amount (USD)</label>
-                      <input id="invest-amount-input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
-                      <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $500</span>
+                      <div className="grid grid-cols-4 max-md:grid-cols-2 gap-2 mt-1">
+                        {[500, 1000, 3000, 5000, 10000, 25000, 50000].map(v => (
+                          <button key={v} onClick={() => { setPresetAmount(v); setAmount(String(v)); setShowCustomInput(false); }}
+                            className={`font-mono text-[0.82rem] py-3 px-2 border transition-all min-h-[48px] cursor-pointer ${presetAmount === v ? 'border-gold bg-gold-glow text-gold shadow-[0_0_16px_hsl(var(--gold)/0.15)]' : 'border-b1 bg-s2 text-t2 hover:border-b2 hover:bg-s3'}`}>
+                            ${v.toLocaleString()}
+                          </button>
+                        ))}
+                        <button onClick={() => { setPresetAmount(null); setShowCustomInput(true); setTimeout(() => customInputRef.current?.focus(), 50); }}
+                          className={`font-mono text-[0.82rem] py-3 px-2 border transition-all min-h-[48px] cursor-pointer ${showCustomInput ? 'border-gold bg-gold-glow text-gold shadow-[0_0_16px_hsl(var(--gold)/0.15)]' : 'border-b1 bg-s2 text-t2 hover:border-b2 hover:bg-s3'}`}>
+                          Custom
+                        </button>
+                      </div>
+                      {showCustomInput && (
+                        <div className="mt-3">
+                          <label className="font-label text-[0.55rem] text-t3 tracking-[0.1em] uppercase mb-1 block">Enter Amount (USD)</label>
+                          <input ref={customInputRef} id="invest-amount-input" type="number" inputMode="decimal" value={amount} onChange={e => { setAmount(e.target.value); setPresetAmount(null); }} placeholder="500" min={500} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[48px]" />
+                        </div>
+                      )}
+                      {amount && parseFloat(amount) > 0 && (
+                        <div className="mt-3 py-3 px-4 bg-s2 border border-b1">
+                          <div className="font-label text-[0.5rem] text-t3 tracking-[0.12em] uppercase mb-1">Committing</div>
+                          <div className="font-mono text-[1.6rem] text-gold tabular-nums">${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                      )}
+                      {!showCustomInput && <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $500</span>}
+                      {showCustomInput && parseFloat(amount) > 0 && parseFloat(amount) < 500 && <span className="font-label text-[0.6rem] text-asp-red tracking-[0.1em]">MINIMUM $500</span>}
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
@@ -542,7 +569,7 @@ const DashboardPage = () => {
                     className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
                     {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
                   </button>
-                  <button onClick={() => { setFundSelect(''); setAmount(''); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
+                  <button onClick={() => { setFundSelect(''); setAmount(''); setPresetAmount(null); setShowCustomInput(false); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
                 </div>
               </Card>
             </>
