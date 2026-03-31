@@ -490,6 +490,7 @@ const DashboardPage = () => {
                         <div className="mt-3 py-3 px-4 bg-s2 border border-b1">
                           <div className="font-label text-[0.5rem] text-t3 tracking-[0.12em] uppercase mb-1">Committing</div>
                           <div className="font-mono text-[1.6rem] text-gold tabular-nums">${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div className="font-label text-[0.5rem] text-t4 tracking-[0.1em] uppercase mt-1">{horizon} Month Horizon</div>
                         </div>
                       )}
                       {!showCustomInput && <span className="font-label text-[0.6rem] text-t3 tracking-[0.1em]">MINIMUM $500</span>}
