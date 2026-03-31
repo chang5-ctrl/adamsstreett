@@ -497,13 +497,29 @@ const DashboardPage = () => {
                     </div>
                     <div className="flex flex-col gap-2 mb-5">
                       <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Investment Horizon</label>
-                      <select value={horizon} onChange={e => setHorizon(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                        <option value="6">6 Months</option>
-                        <option value="12">12 Months</option>
-                        <option value="24">24 Months</option>
-                        <option value="36">36 Months</option>
-                        <option value="60">60 Months</option>
-                      </select>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { value: '3', label: '3 Months' },
+                          { value: '6', label: '6 Months' },
+                          { value: '12', label: '12 Months' },
+                          { value: '24', label: '24 Months' },
+                          { value: '36', label: '36 Months' },
+                          { value: '60', label: '60 Months' },
+                        ].map(h => (
+                          <button
+                            key={h.value}
+                            type="button"
+                            onClick={() => setHorizon(h.value)}
+                            className={`px-4 py-2.5 min-h-[44px] font-label text-[0.7rem] tracking-[0.08em] uppercase border transition-all duration-200 ${
+                              horizon === h.value
+                                ? 'border-gold bg-gold/10 text-gold shadow-[0_0_12px_hsl(var(--gold)/0.2)]'
+                                : 'border-b1 bg-s2 text-t3 hover:border-gold/40 hover:text-t2'
+                            }`}
+                          >
+                            {h.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div>
