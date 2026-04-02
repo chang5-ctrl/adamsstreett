@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 interface HeroSectionProps {
@@ -6,30 +6,38 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
-  const [returns, setReturns] = useState(84729441);
+  const [returns, setReturns] = useState(84.7);
   const [partners, setPartners] = useState(1247);
   const [showSimulator, setShowSimulator] = useState(false);
-  const [simAmount, setSimAmount] = useState(250000);
-  const [simYears, setSimYears] = useState(5);
+  const [simAmount, setSimAmount] = useState(500);
+  const [simHorizon, setSimHorizon] = useState('12');
+  const [flash, setFlash] = useState(false);
+  const flashTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  const MULTIPLIERS: Record<string, number> = { '3': 1.9, '6': 2.8, '12': 4.2, '24': 6.5, '36': 9.8, '60': 18 };
 
   useEffect(() => {
-    const ri = setInterval(() => setReturns(r => r + Math.floor(Math.random() * 720 + 480)), 3000);
-    const pi = setInterval(() => setPartners(p => {
-      const next = p + (Math.random() > 0.5 ? 1 : -1);
-      return Math.max(1240, Math.min(1262, next));
-    }), 22000);
-    return () => { clearInterval(ri); clearInterval(pi); };
+    const ri = setInterval(() => {
+      setReturns(r => parseFloat((r + (Math.random() * 6 + 2) / 1000).toFixed(1)));
+      setFlash(true);
+      if (flashTimeout.current) clearTimeout(flashTimeout.current);
+      flashTimeout.current = setTimeout(() => setFlash(false), 300);
+    }, 800);
+    const pi = setInterval(() => setPartners(p => Math.max(1240, Math.min(1262, p + (Math.random() > 0.5 ? 1 : -1)))), 22000);
+    return () => { clearInterval(ri); clearInterval(pi); if (flashTimeout.current) clearTimeout(flashTimeout.current); };
   }, []);
 
-  const avgRate = 0.273;
-  const projected = Math.round(simAmount * Math.pow(1 + avgRate, simYears));
+  const projected = Math.round(simAmount * MULTIPLIERS[simHorizon]);
   const presets = [500, 3000, 5000, 10000];
-  const yearPresets = [1, 3, 5, 7, 10];
+  const horizonPresets = [
+    { value: '3', label: '3M' }, { value: '6', label: '6M' }, { value: '12', label: '1Y' },
+    { value: '24', label: '2Y' }, { value: '36', label: '3Y' }, { value: '60', label: '5Y' },
+  ];
 
-  // Generate chart points
   const chartPoints = Array.from({ length: 20 }, (_, i) => {
     const t = i / 19;
-    const y = simAmount * Math.pow(1 + avgRate, t * simYears);
+    const mult = 1 + (MULTIPLIERS[simHorizon] - 1) * t;
+    const y = simAmount * mult;
     return { x: (i / 19) * 540 + 30, y: 150 - ((y - simAmount) / (projected - simAmount || 1)) * 120 };
   });
   const pathD = chartPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
@@ -37,13 +45,11 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
 
   return (
     <section className="min-h-[calc(100vh-94px)] grid grid-cols-1 lg:grid-cols-2 border-b border-b1 relative overflow-hidden" style={{ padding: 0 }}>
-      {/* Decorative lines */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute h-px left-0 right-0 bg-[hsl(var(--b1))]" style={{ top: '38.2%' }} />
         <div className="absolute w-px top-0 bottom-0 bg-[hsl(var(--b1))]" style={{ left: '50%' }} />
       </div>
 
-      {/* Left: Hero text */}
       <div className="py-20 px-[52px] max-md:px-7 flex flex-col justify-center relative z-[1]">
         <div className="flex items-center gap-3 mb-7 animate-fadeUp">
           <div className="w-8 h-px bg-gold" />
@@ -65,18 +71,17 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
         </div>
       </div>
 
-      {/* Right: Stats + chart */}
       <div className="hidden lg:flex flex-col justify-end border-l border-b1 relative z-[1] animate-fadeIn">
         <div className="grid grid-cols-2">
           {[
-            { label: 'Live Returns', value: `$${returns.toLocaleString()}`, cls: 'text-asp-green', sub: 'Total generated' },
+            { label: 'Live Returns', value: `$${returns.toFixed(1)}B`, cls: flash ? 'text-[#e8c96a]' : 'text-asp-green', sub: 'Total generated' },
             { label: 'Capital Deployed', value: '$1.24B', cls: 'text-t1', sub: 'Across all funds' },
             { label: 'Average ROI', value: '27.3%', cls: 'text-gold', sub: 'Partner average' },
             { label: 'Active Partners', value: partners.toLocaleString(), cls: 'text-t1', sub: 'Across 6 continents' },
           ].map((stat, i) => (
             <div key={i} className={`py-9 px-8 border-b1 ${i < 2 ? '' : 'border-t'} ${i % 2 === 1 ? 'border-l' : ''}`}>
               <div className="font-label text-[0.55rem] text-t4 tracking-[0.2em] uppercase mb-2">{stat.label}</div>
-              <div className={`font-mono text-[1.6rem] tabular-nums tracking-[-0.02em] mb-1 ${stat.cls}`}>{stat.value}</div>
+              <div className={`font-mono text-[1.6rem] tabular-nums tracking-[-0.02em] mb-1 transition-colors duration-300 ${stat.cls}`}>{stat.value}</div>
               <div className="font-body text-[0.72rem] text-t4">{stat.sub}</div>
             </div>
           ))}
@@ -96,7 +101,6 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
         </div>
       </div>
 
-      {/* Returns Simulator Modal */}
       {showSimulator && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[rgba(0,0,0,0.75)] backdrop-blur-sm" onClick={() => setShowSimulator(false)} />
@@ -106,14 +110,13 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
               <button onClick={() => setShowSimulator(false)} className="font-mono text-t3 text-lg bg-transparent border-none cursor-pointer hover:text-t1 transition-colors">✕</button>
             </div>
             <div className="p-6">
-              {/* Amount */}
               <div className="mb-6">
                 <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-3">Investment Amount</div>
                 <div className="flex gap-2 flex-wrap mb-3">
                   {presets.map(p => (
                     <button key={p} onClick={() => setSimAmount(p)}
                       className={`font-label text-[0.62rem] tracking-[0.1em] uppercase py-2 px-4 cursor-pointer transition-all border min-h-[40px] ${simAmount === p ? 'bg-gold text-void border-gold' : 'bg-transparent text-t3 border-b2 hover:border-b3'}`}>
-                      ${(p / 1000)}K
+                      ${(p >= 1000 ? (p / 1000) + 'K' : p)}
                     </button>
                   ))}
                 </div>
@@ -123,26 +126,20 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
                 <div className="font-mono text-[1.4rem] text-gold mt-2">${simAmount.toLocaleString()}</div>
               </div>
 
-              {/* Time Horizon */}
               <div className="mb-6">
                 <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-3">Time Horizon</div>
                 <div className="flex gap-2 flex-wrap mb-3">
-                  {yearPresets.map(y => (
-                    <button key={y} onClick={() => setSimYears(y)}
-                      className={`font-label text-[0.62rem] tracking-[0.1em] uppercase py-2 px-4 cursor-pointer transition-all border min-h-[40px] ${simYears === y ? 'bg-gold text-void border-gold' : 'bg-transparent text-t3 border-b2 hover:border-b3'}`}>
-                      {y} {y === 1 ? 'Year' : 'Years'}
+                  {horizonPresets.map(h => (
+                    <button key={h.value} onClick={() => setSimHorizon(h.value)}
+                      className={`font-label text-[0.62rem] tracking-[0.1em] uppercase py-2 px-4 cursor-pointer transition-all border min-h-[40px] ${simHorizon === h.value ? 'bg-gold text-void border-gold' : 'bg-transparent text-t3 border-b2 hover:border-b3'}`}>
+                      {h.label}
                     </button>
                   ))}
                 </div>
-                <input type="range" min={1} max={10} step={1} value={simYears}
-                  onChange={e => setSimYears(Number(e.target.value))}
-                  className="w-full accent-[hsl(43,55%,54%)] h-1 cursor-pointer" />
-                <div className="font-mono text-[1rem] text-t2 mt-2">{simYears} {simYears === 1 ? 'Year' : 'Years'}</div>
               </div>
 
-              {/* Chart */}
               <div className="bg-s1 border border-b1 p-5 mb-5">
-                <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">📈 Projected Growth</div>
+                <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">📈 Projected Growth ({MULTIPLIERS[simHorizon]}x)</div>
                 <div className="font-mono text-[2.2rem] text-gold mb-3">${projected.toLocaleString()}</div>
                 <svg viewBox="0 0 600 170" className="w-full h-[140px]">
                   <defs>
@@ -155,20 +152,20 @@ const HeroSection = ({ onScrollTo }: HeroSectionProps) => {
                   <path d={pathD} fill="none" stroke="hsl(43 55% 54%)" strokeWidth="2" />
                 </svg>
                 <div className="flex justify-between font-mono text-[0.62rem] text-t4 mt-1">
-                  <span>{new Date().getFullYear()}</span>
-                  <span>{new Date().getFullYear() + simYears}</span>
+                  <span>Today</span>
+                  <span>{simHorizon} months</span>
                 </div>
               </div>
 
               <div className="font-body text-[0.72rem] text-t4 leading-[1.7] mb-5">
-                Based on 27.3% average partner ROI. Projections are illustrative. All investments involve risk.
+                Based on {MULTIPLIERS[simHorizon]}x multiplier for {simHorizon}-month horizon. Projections are illustrative. All investments involve risk.
               </div>
 
               <div className="flex gap-3">
                 <Link to="/auth" className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all no-underline inline-block min-h-[48px] flex items-center">
-                  Invest ${(simAmount / 1000)}K Now →
+                  Invest ${simAmount >= 1000 ? (simAmount / 1000) + 'K' : simAmount} Now →
                 </Link>
-                <button onClick={() => navigator.clipboard.writeText(`Adams Streett Partners: $${simAmount.toLocaleString()} invested over ${simYears} years → $${projected.toLocaleString()} projected`)}
+                <button onClick={() => navigator.clipboard.writeText(`Adams Streett Partners: $${simAmount.toLocaleString()} invested over ${simHorizon} months → $${projected.toLocaleString()} projected (${MULTIPLIERS[simHorizon]}x)`)}
                   className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-t3 bg-transparent border border-b2 py-3.5 px-6 cursor-pointer hover:border-b3 hover:text-t2 transition-all min-h-[48px]">
                   Copy Projection
                 </button>
