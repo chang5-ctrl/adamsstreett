@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FUNDS, WALLETS } from '@/data/funds';
+import { FUNDS, WALLETS, RETURN_MULTIPLIERS, SPONSORED_FUNDS } from '@/data/funds';
+import MembershipPage from './MembershipPage';
+import AcademyPage from './AcademyPage';
+import AffiliatePage from './AffiliatePage';
+import SponsoredListingPage from './SponsoredListingPage';
 
-type Page = 'overview' | 'portfolio' | 'invest' | 'staking' | 'returns' | 'referral' | 'withdraw' | 'profile' | 'leaderboard' | 'network' | 'concierge' | 'vault';
+type Page = 'overview' | 'portfolio' | 'invest' | 'staking' | 'returns' | 'referral' | 'withdraw' | 'profile' | 'leaderboard' | 'network' | 'concierge' | 'vault' | 'membership' | 'academy' | 'affiliate' | 'sponsored';
 
 const PAGE_TITLES: Record<Page, string> = {
   overview: 'Overview', portfolio: 'Portfolio Analytics', invest: 'New Investment', staking: 'Staking Pools',
   returns: 'Returns Simulator', referral: 'Referral Program', withdraw: 'Withdrawal', profile: 'Partner Profile',
   leaderboard: 'Partner Leaderboard', network: 'Global Network', concierge: 'ASP Intelligence', vault: 'Document Vault',
+  membership: 'Membership', academy: 'ASP Academy', affiliate: 'Affiliate Partners', sponsored: 'List Your Fund',
 };
 
 const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: string }[] }[] = [
@@ -23,6 +28,12 @@ const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: st
   { group: 'Intelligence', items: [
     { id: 'returns', label: 'Returns', icon: '▮' },
     { id: 'referral', label: 'Referral', icon: '⊕' },
+  ]},
+  { group: 'Premium', items: [
+    { id: 'membership', label: 'Membership', icon: '♦' },
+    { id: 'academy', label: 'Academy', icon: '▥' },
+    { id: 'affiliate', label: 'Partners', icon: '⊞' },
+    { id: 'sponsored', label: 'List Fund', icon: '▦' },
   ]},
   { group: 'Community', items: [
     { id: 'leaderboard', label: 'Leaderboard', icon: '▯' },
@@ -61,7 +72,7 @@ const DashboardPage = () => {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const customInputRef = useRef<HTMLInputElement>(null);
   const [horizon, setHorizon] = useState('12');
-  const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' | 'pending' } | null>(null);
   const [investLoading, setInvestLoading] = useState(false);
   const [refId, setRefId] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -74,13 +85,12 @@ const DashboardPage = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [simAmount, setSimAmount] = useState('500');
-  const [simFund, setSimFund] = useState('12|28');
+  const [simHorizon, setSimHorizon] = useState('12');
   const [vaultSearch, setVaultSearch] = useState('');
   const [vaultFilter, setVaultFilter] = useState('all');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [investFilter, setInvestFilter] = useState('all');
 
-  // Referral code generation — start with one auto-generated code, zero uses
   const [referralCodes, setReferralCodes] = useState([
     { code: 'ASP-26-GE-' + Math.random().toString(36).substr(2, 6) + '-4K', sector: 'General', uses: 0, maxUses: 10, expires: 'Dec 31, 2026' },
   ]);
@@ -114,30 +124,24 @@ const DashboardPage = () => {
 
   const calcProjections = useCallback(() => {
     if (!fundSelect || !amount || parseFloat(amount) < 500) return { cons: '—', agg: '—' };
-    const parts = fundSelect.split('|');
-    const rates = parts[1].split('-');
-    const consRate = parseFloat(rates[0]) / 100;
-    const aggRate = parseFloat(rates[1]) / 100;
-    const years = parseInt(horizon) / 12;
+    const mult = RETURN_MULTIPLIERS[horizon];
+    if (!mult) return { cons: '—', agg: '—' };
+    const a = parseFloat(amount);
     return {
-      cons: '$' + Math.round(parseFloat(amount) * Math.pow(1 + consRate, years)).toLocaleString(),
-      agg: '$' + Math.round(parseFloat(amount) * Math.pow(1 + aggRate, years)).toLocaleString(),
+      cons: '$' + Math.round(a * mult.cons).toLocaleString(),
+      agg: '$' + Math.round(a * mult.agg).toLocaleString(),
     };
   }, [fundSelect, amount, horizon]);
 
   const simCalc = useCallback(() => {
-    const a = parseFloat(simAmount) || 100000;
-    const rates = simFund.split('|');
-    const cons = parseFloat(rates[0]) / 100;
-    const agg = parseFloat(rates[1]) / 100;
-    const fmt = (v: number) => '$' + Math.round(v).toLocaleString();
+    const a = parseFloat(simAmount) || 500;
+    const mult = RETURN_MULTIPLIERS[simHorizon];
+    if (!mult) return { cons: '—', agg: '—' };
     return {
-      y1c: fmt(a * Math.pow(1 + cons, 1)),
-      y3c: fmt(a * Math.pow(1 + cons, 3)),
-      y1a: fmt(a * Math.pow(1 + agg, 1)),
-      y5a: fmt(a * Math.pow(1 + agg, 5)),
+      cons: '$' + Math.round(a * mult.cons).toLocaleString(),
+      agg: '$' + Math.round(a * mult.agg).toLocaleString(),
     };
-  }, [simAmount, simFund]);
+  }, [simAmount, simHorizon]);
 
   const submitInvestment = () => {
     if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
@@ -145,7 +149,10 @@ const DashboardPage = () => {
     setInvestLoading(true);
     const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
     setRefId(ref);
-    setInvestMsg({ text: `Commitment recorded. Reference: ${ref}. Send your exact payment to the wallet address above. Your portfolio activates automatically once payment is detected on-chain.`, type: 'success' });
+    setInvestMsg({
+      text: `Commitment recorded. Reference: ${ref}. Send your exact payment to the wallet address above. Your portfolio will activate automatically once your payment is detected on-chain. This may take a few minutes.`,
+      type: 'pending'
+    });
     setInvestLoading(false);
   };
 
@@ -159,43 +166,34 @@ const DashboardPage = () => {
   const sendMessage = (text?: string) => {
     const msg = text || chatInput.trim();
     if (!msg) return;
-    const userMsg = { text: msg, from: 'user' as const };
-    setChatMessages(prev => [...prev, userMsg]);
+    setChatMessages(prev => [...prev, { text: msg, from: 'user' }]);
     setChatInput('');
     setChatLoading(true);
-
-    // Smart contextual responses
     setTimeout(() => {
-      let response = '';
       const lower = msg.toLowerCase();
-
+      let response = '';
       if (lower.includes('best') && lower.includes('fund') || lower.includes('which fund') || lower.includes('recommend')) {
-        response = 'Based on a balanced risk approach, I\'d recommend starting with the **Adams Streett General Fund** at **12–28% APY** — it\'s our flagship diversified strategy with a 6-month horizon. For higher conviction, the **Private Equity Pool** offers **18–40% APY** over 12+ months. What\'s your risk tolerance and investment horizon? *Projections are illustrative.*';
-      } else if (lower.includes('staking') || lower.includes('pool') || lower.includes('lock')) {
-        response = 'We offer three staking pools:\n\n— **Flex Pool**: 14% APY, 90-day lock, min $500\n— **Growth Pool**: 22% APY, 180-day lock, min $3,000\n— **Apex Pool**: 35% APY, 365-day lock, min $5,000 (Premium+ only)\n\nAll pools compound daily. Navigate to the Staking page to commit. *Rates are target yields, not guaranteed.*';
-      } else if (lower.includes('payment') || lower.includes('pay') || lower.includes('wallet') || lower.includes('btc') || lower.includes('eth') || lower.includes('usdc')) {
-        response = 'We accept **BTC**, **ETH**, and **USDC** (ERC-20). After submitting a commitment on the Invest page, send your exact amount to the displayed wallet address. Our system detects on-chain payments automatically. Portfolio activates upon confirmation — typically within minutes for ETH/USDC and ~30 minutes for BTC.';
+        response = 'Based on a balanced risk approach, I\'d recommend starting with the **Adams Streett General Fund** — our flagship diversified strategy. For a 12-month horizon your $500 grows to **$2,100** (4.2x). For higher conviction, the **Private Equity Pool** offers growth exposure. What\'s your risk tolerance? *Projections are illustrative.*';
+      } else if (lower.includes('staking') || lower.includes('pool')) {
+        response = 'We offer three staking pools:\n\n— **Flex Pool**: 14% APY, 90-day lock, min $500\n— **Growth Pool**: 22% APY, 180-day lock, min $3,000\n— **Apex Pool**: 35% APY, 365-day lock, min $5,000 (Premium+ only)\n\nAll pools compound daily. *Rates are target yields.*';
+      } else if (lower.includes('payment') || lower.includes('pay') || lower.includes('wallet') || lower.includes('usdt')) {
+        response = 'We accept **BTC**, **ETH**, **USDC** (ERC-20), and **USDT** (TRC-20). After submitting a commitment on the Invest page, send your exact amount to the displayed wallet address. Our system detects on-chain payments automatically.';
       } else if (lower.includes('return') || lower.includes('calculate') || lower.includes('$500') || lower.includes('500')) {
-        response = 'On **$500** in the General Fund:\n\n— **Year 1**: $560–$640\n— **Year 3**: $740–$985\n\nFor higher returns, the African Unicorn Fund projects **$610–$900** in Year 1. Use the Returns Simulator for custom projections. *All projections are illustrative.*';
+        response = 'On **$500** committed:\n\n— **3 months**: $950 (1.9x)\n— **6 months**: $1,400 (2.8x)\n— **12 months**: $2,100 (4.2x)\n— **36 months**: $4,900 (9.8x)\n— **60 months**: $9,000 (18x)\n\nUse the Returns Simulator for custom projections. *All projections are illustrative.*';
       } else if (lower.includes('tier') || lower.includes('bronze') || lower.includes('silver') || lower.includes('gold')) {
-        response = 'Investment tiers unlock exclusive benefits:\n\n— **Starter**: $500+ — General Fund, DeFi Yield, Fixed Income\n— **Growth**: $3,000+ — All funds except Frontier & Longevity, 5% referral\n— **Premium**: $5,000+ — ALL 21 funds, Apex Pool, priority processing\n— **Elite**: $10,000+ — Platinum status, ASP Black Card, dedicated concierge\n\nYour tier is based on total committed capital across all funds.';
+        response = 'Investment tiers unlock exclusive benefits:\n\n— **Starter**: $500+ — General Fund, DeFi Yield, Fixed Income\n— **Growth**: $3,000+ — All funds except Frontier & Longevity, 5% referral\n— **Premium**: $5,000+ — ALL 21 funds, Apex Pool, priority processing\n— **Elite**: $10,000+ — Platinum status, ASP Black Card, dedicated concierge';
       } else if (lower.includes('referral') || lower.includes('refer') || lower.includes('commission')) {
-        response = 'You earn **5% commission** on every commitment made by a partner you refer. Your referral code is on the Referral page — share it via the unique link. Referred partners also receive Silver tier benefits for their first 90 days. Minimum payout is $1,000, processed monthly.';
-      } else if (lower.includes('halal') || lower.includes('sharia') || lower.includes('islamic')) {
-        response = 'The **Halal Investment Fund** offers **12–30% APY** with full Sharia compliance — no riba, no prohibited sectors, ethical screening by our advisory board. It\'s our most popular fund among GCC and MENA partners. 12+ month horizon, moderate risk. *Projections are illustrative.*';
-      } else if (lower.includes('fee') || lower.includes('cost') || lower.includes('charge')) {
-        response = 'Our fee structure:\n\n— **2% annual management fee** (charged monthly)\n— **20% performance carry** above the hurdle rate\n— No entry or exit fees\n— No hidden charges\n\nGold tier partners receive zero fees on the first $50K committed.';
+        response = 'You earn **5% commission** on every commitment made by a partner you refer. Your referral code is on the Referral page. Minimum payout is $1,000, processed monthly.';
       } else {
-        response = 'I can help you with fund selection, portfolio optimization, staking strategies, payment instructions, tier benefits, and return projections. Could you be more specific about what you\'d like to know? You can also try the Returns Simulator for custom calculations.';
+        response = 'I can help you with fund selection, portfolio optimization, staking strategies, payment instructions, tier benefits, and return projections. Could you be more specific?';
       }
-
       setChatMessages(prev => [...prev, { text: response, from: 'asp' }]);
       setChatLoading(false);
     }, 1200);
   };
 
   const clearChat = () => {
-    setChatMessages([{ text: 'Welcome to your private investment concierge. I can help you understand our 21 funds, optimize your portfolio allocation, explain staking strategies, calculate returns, and answer any questions about the platform. How can I assist you today?', from: 'asp' }]);
+    setChatMessages([{ text: 'Welcome to your private investment concierge. How can I assist you today?', from: 'asp' }]);
   };
 
   const generateReferralCode = () => {
@@ -218,6 +216,80 @@ const DashboardPage = () => {
     } else {
       setReferralValidation(null);
     }
+  };
+
+  const generateBlackCard = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 860;
+    canvas.height = 540;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Background
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, 860, 540);
+
+    // Gold border
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(20, 20, 820, 500);
+
+    // Inner border
+    ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(30, 30, 800, 480);
+
+    // ASP logo
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'bold 36px serif';
+    ctx.fillText('ASP', 55, 80);
+
+    ctx.fillStyle = 'rgba(201,168,76,0.6)';
+    ctx.font = '10px sans-serif';
+    ctx.fillText('ADAMS STREETT PARTNERS', 55, 98);
+
+    // Partner name
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '300 32px serif';
+    ctx.fillText('New Partner', 55, 280);
+
+    // Details
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('MEMBER SINCE', 55, 370);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '16px monospace';
+    ctx.fillText(new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase(), 55, 392);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('TIER', 250, 370);
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = '16px monospace';
+    ctx.fillText('GOLD', 250, 392);
+
+    // Card number
+    const cardNum = 'ASP-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '14px monospace';
+    ctx.fillText(cardNum, 55, 470);
+
+    // Chip
+    ctx.fillStyle = '#c9a84c';
+    ctx.globalAlpha = 0.8;
+    ctx.fillRect(55, 140, 65, 45);
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = '#0a0a0a';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(87, 140); ctx.lineTo(87, 185); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(55, 162); ctx.lineTo(120, 162); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Download
+    const link = document.createElement('a');
+    link.download = 'ASP-Black-Card.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   const leaderboardData = [
@@ -282,7 +354,6 @@ const DashboardPage = () => {
   const tierOrder = { bronze: 0, silver: 1, gold: 2 };
   const currentTier = 'bronze';
 
-  // Format chat messages with bold for numbers/percentages
   const formatChatText = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*|\n)/g);
     return parts.map((part, i) => {
@@ -292,6 +363,16 @@ const DashboardPage = () => {
       }
       return <span key={i}>{part}</span>;
     });
+  };
+
+  const paymentNetworkNote = () => {
+    switch (selectedPayment) {
+      case 'btc': return 'Bitcoin Network';
+      case 'eth': return 'Ethereum Network';
+      case 'usdc': return 'USDC · ERC-20 on Ethereum';
+      case 'usdt': return 'Send USDT on Tron (TRC-20) network only. Do not send on Ethereum network.';
+      default: return '';
+    }
   };
 
   return (
@@ -319,7 +400,6 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Tier Progress Bar */}
           <div className="px-5 py-4 border-b border-b1">
             <div className="flex justify-between items-center mb-1.5">
               <span className="font-label text-[0.52rem] text-t3 tracking-[0.15em] uppercase">Your Tier: Starter</span>
@@ -407,7 +487,6 @@ const DashboardPage = () => {
           {/* INVEST */}
           {page === 'invest' && (
             <>
-              {/* Fund filter tabs */}
               <div className="mb-3">
                 <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Select Fund</div>
                 <div className="flex gap-px bg-[hsl(var(--b1))] mb-4 flex-wrap">
@@ -425,10 +504,10 @@ const DashboardPage = () => {
                   ))}
                 </div>
 
-                {/* Fund picker grid */}
                 <div className="grid grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-2">
                   {investFilteredFunds.map((f, i) => {
                     const isSelected = fundSelect === f.selectValue;
+                    const isSponsored = SPONSORED_FUNDS.includes(f.name);
                     const riskColors: Record<string, string> = {
                       low: 'text-[#86efac] border-[#86efac]/30',
                       mod: 'text-asp-amber border-[hsl(var(--amber))]/30',
@@ -443,14 +522,18 @@ const DashboardPage = () => {
                           setFundSelect(f.selectValue);
                           setTimeout(() => document.getElementById('invest-amount-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
                         }}
-                        className={`bg-s1 border p-4 cursor-pointer transition-all ${isSelected ? 'border-gold bg-gold-glow shadow-[0_0_20px_rgba(201,168,76,0.1)]' : 'border-b1 hover:border-b2 opacity-80 hover:opacity-100'}`}
+                        className={`bg-s1 border p-4 cursor-pointer transition-all relative ${isSelected ? 'border-gold bg-gold-glow shadow-[0_0_20px_rgba(201,168,76,0.1)]' : 'border-b1 hover:border-b2 opacity-80 hover:opacity-100'}`}
                       >
+                        {isSponsored && <div className="absolute top-2 right-2 font-label text-[0.45rem] text-gold tracking-[0.1em] uppercase border border-gold py-0.5 px-1.5">Featured</div>}
                         <div className="flex justify-between items-start mb-2 gap-2">
                           <span className="font-heading text-[0.88rem] text-t1 leading-tight">{f.name}</span>
                           <span className={`font-label text-[0.5rem] tracking-[0.1em] uppercase border py-0.5 px-1.5 whitespace-nowrap ${riskColors[f.risk] || 'text-t3 border-b1'}`}>{f.riskLabel}</span>
                         </div>
                         <div className="font-mono text-[1.1rem] text-gold mb-2">{f.apy} <span className="text-[0.6rem] text-t3">APY</span></div>
-                        <span className="font-label text-[0.5rem] tracking-[0.1em] uppercase text-t4 border border-b1 py-0.5 px-1.5">{catLabels[f.cat] || f.cat}</span>
+                        <div className="flex justify-between items-center">
+                          <span className="font-label text-[0.5rem] tracking-[0.1em] uppercase text-t4 border border-b1 py-0.5 px-1.5">{catLabels[f.cat] || f.cat}</span>
+                          {isSponsored && <span className="font-mono text-[0.45rem] text-t4">Sponsored</span>}
+                        </div>
                       </div>
                     );
                   })}
@@ -527,13 +610,18 @@ const DashboardPage = () => {
                     <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2 block">Projected Returns</label>
                     <div className="bg-s2 p-5 border border-b1">
                       <div className="mb-4">
-                        <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Conservative Projection</div>
+                        <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Conservative Projection (85%)</div>
                         <div className="font-mono text-[1.2rem] text-t1">{projections.cons}</div>
                       </div>
                       <div>
-                        <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Aggressive Projection</div>
+                        <div className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase mb-1">Aggressive Projection (100%)</div>
                         <div className="font-mono text-[1.2rem] text-gold">{projections.agg}</div>
                       </div>
+                      {amount && parseFloat(amount) >= 500 && RETURN_MULTIPLIERS[horizon] && (
+                        <div className="mt-3 pt-3 border-t border-b1 font-mono text-[0.72rem] text-t3">
+                          Multiplier: {RETURN_MULTIPLIERS[horizon].agg}x over {horizon} months
+                        </div>
+                      )}
                       <div className="mt-3 pt-3 border-t border-b1 font-body text-[0.7rem] text-t4 leading-[1.6]">Projections are illustrative targets. All investments involve risk.</div>
                     </div>
                   </div>
@@ -543,16 +631,17 @@ const DashboardPage = () => {
                   <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Payment Method</div>
                   <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
                     {[
-                      { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected' },
-                      { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected' },
-                      { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20' },
-                      { key: 'wire', icon: '⇄', name: 'Wire Transfer', desc: 'Coming Soon', disabled: true },
+                      { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected', badge: 'Bitcoin Network' },
+                      { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected', badge: 'Ethereum Network' },
+                      { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20', badge: 'ERC-20 Network' },
+                      { key: 'usdt', icon: 'T', name: 'USDT (Tether)', desc: 'Tether stablecoin on Tron network. Near-zero fees. Instant settlement.', badge: 'TRC-20 Network' },
                     ].map(p => (
-                      <div key={p.key} onClick={() => !('disabled' in p && p.disabled) && setSelectedPayment(p.key)}
-                        className={`bg-s1 p-5 cursor-pointer transition-all ${'disabled' in p && p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'} ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
-                        <div className={`font-mono text-[1.4rem] mb-3 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-gold'}`}>{p.icon}</div>
-                        <div className={`font-heading text-[0.95rem] mb-1.5 ${'disabled' in p && p.disabled ? 'text-t3' : 'text-t1'}`}>{p.name}</div>
-                        <p className="font-body text-[0.72rem] text-t3 leading-[1.6]">{p.desc}</p>
+                      <div key={p.key} onClick={() => setSelectedPayment(p.key)}
+                        className={`bg-s1 p-5 cursor-pointer transition-all hover:bg-s2 ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
+                        <div className="font-mono text-[1.4rem] mb-3 text-gold">{p.icon}</div>
+                        <div className="font-heading text-[0.95rem] text-t1 mb-1.5">{p.name}</div>
+                        <p className="font-body text-[0.72rem] text-t3 leading-[1.6] mb-2">{p.desc}</p>
+                        <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase border border-b1 py-0.5 px-1.5">{p.badge}</span>
                       </div>
                     ))}
                   </div>
@@ -561,8 +650,8 @@ const DashboardPage = () => {
                 <div className="bg-s2 border border-b2 p-5 mt-5">
                   <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
                   <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-1">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
-                  <div className="font-mono text-[0.6rem] text-t4 mb-3">
-                    {selectedPayment === 'btc' ? 'Bitcoin Network' : selectedPayment === 'eth' ? 'Ethereum Network' : selectedPayment === 'usdc' ? 'USDC · ERC-20 on Ethereum' : ''}
+                  <div className={`font-mono text-[0.6rem] mb-3 ${selectedPayment === 'usdt' ? 'text-asp-amber' : 'text-t4'}`}>
+                    {paymentNetworkNote()}
                   </div>
                   <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">Copy Address</button>
                 </div>
@@ -576,8 +665,17 @@ const DashboardPage = () => {
                 )}
 
                 {investMsg && (
-                  <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${investMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
+                  <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${
+                    investMsg.type === 'error'
+                      ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]'
+                      : investMsg.type === 'pending'
+                        ? 'border-l-[#c9a84c] text-[#c9a84c] bg-[rgba(201,168,76,0.05)]'
+                        : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'
+                  }`}>
                     {investMsg.text}
+                    {investMsg.type === 'pending' && (
+                      <div className="font-mono text-[0.68rem] text-t4 mt-2">Awaiting payment — not yet confirmed</div>
+                    )}
                   </div>
                 )}
 
@@ -609,7 +707,7 @@ const DashboardPage = () => {
                       <p className="font-body text-[0.78rem] text-t3 leading-[1.7]">{p.desc}</p>
                       <div className="flex gap-2 mt-3 flex-wrap">
                         {p.tier && <span className="font-label text-[0.55rem] text-asp-amber border border-[hsl(var(--amber))] py-0.5 px-2 inline-block">{p.tier}</span>}
-                        {p.badge && <span className="font-label text-[0.55rem] text-asp-red border border-[hsl(var(--red))] py-0.5 px-2 inline-block">{p.badge}</span>}
+                        {'badge' in p && p.badge && <span className="font-label text-[0.55rem] text-asp-red border border-[hsl(var(--red))] py-0.5 px-2 inline-block">{p.badge}</span>}
                       </div>
                     </div>
                   ))}
@@ -630,17 +728,26 @@ const DashboardPage = () => {
                   <input type="number" value={simAmount} onChange={e => setSimAmount(e.target.value)} className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-mono text-[1.4rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Fund</label>
-                  <select value={simFund} onChange={e => setSimFund(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                    {FUNDS.map((f, i) => <option key={i} value={`${f.apy.replace(/[^0-9–-]/g, '').split('–').join('|')}`}>{f.name} — {f.apy}</option>)}
-                  </select>
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Time Horizon</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: '3', label: '3M' }, { value: '6', label: '6M' }, { value: '12', label: '1Y' },
+                      { value: '24', label: '2Y' }, { value: '36', label: '3Y' }, { value: '60', label: '5Y' },
+                    ].map(h => (
+                      <button key={h.value} onClick={() => setSimHorizon(h.value)}
+                        className={`px-4 py-2.5 min-h-[44px] font-label text-[0.7rem] tracking-[0.08em] uppercase border transition-all ${
+                          simHorizon === h.value ? 'border-gold bg-gold/10 text-gold' : 'border-b1 bg-s2 text-t3 hover:border-gold/40'
+                        }`}>{h.label}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
-                <KPI label="Year 1 (Conservative)" value={sim.y1c} cls="text-asp-green" />
-                <KPI label="Year 3 (Conservative)" value={sim.y3c} cls="text-asp-green" />
-                <KPI label="Year 1 (Aggressive)" value={sim.y1a} cls="text-gold" />
-                <KPI label="Year 5 (Aggressive)" value={sim.y5a} cls="text-gold" />
+              <div className="grid grid-cols-2 max-md:grid-cols-1 gap-px bg-[hsl(var(--b1))]">
+                <KPI label={`Conservative (${RETURN_MULTIPLIERS[simHorizon]?.cons.toFixed(2)}x)`} value={sim.cons} cls="text-asp-green" />
+                <KPI label={`Aggressive (${RETURN_MULTIPLIERS[simHorizon]?.agg}x)`} value={sim.agg} cls="text-gold" />
+              </div>
+              <div className="mt-4 font-body text-[0.72rem] text-t4 leading-[1.7]">
+                Multiplier: {RETURN_MULTIPLIERS[simHorizon]?.agg}x over {simHorizon} months. Projections are illustrative. All investments involve risk.
               </div>
             </Card>
           )}
@@ -655,7 +762,6 @@ const DashboardPage = () => {
                   <KPI label="Commission Rate" value="5%" change="Per referral commitment" cls="text-gold" />
                   <KPI label="Active Codes" value={String(referralCodes.length)} cls="text-t1" />
                 </div>
-
                 <div className="flex flex-col gap-3 mb-6">
                   {referralCodes.map((rc, i) => (
                     <div key={i} className="bg-s2 border border-b1 p-4">
@@ -674,9 +780,7 @@ const DashboardPage = () => {
                     </div>
                   ))}
                 </div>
-
                 <button onClick={generateReferralCode} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all mb-6 min-h-[44px]">Generate New Code ▼</button>
-
                 <div className="bg-s2 p-5 border border-b1">
                   <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Validate a Referral Code</div>
                   <input type="text" value={referralInput} onChange={e => validateReferralInput(e.target.value)}
@@ -686,10 +790,9 @@ const DashboardPage = () => {
                   )}
                 </div>
               </Card>
-
               <Card title="How It Works">
                 <div className="flex flex-col gap-3 font-body text-[0.82rem] text-t3 leading-[1.8]">
-                  <p>When someone uses your code:</p>
+                  <p>Share your referral link to start earning 5% commission.</p>
                   <div className="flex items-start gap-2"><span className="text-gold">—</span> You get 5% commission on their commitment</div>
                   <div className="flex items-start gap-2"><span className="text-gold">—</span> They get Silver tier benefits for first 90 days</div>
                   <div className="flex items-start gap-2"><span className="text-gold">—</span> Minimum payout $1,000. Earnings processed monthly.</div>
@@ -711,14 +814,15 @@ const DashboardPage = () => {
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Wallet Address</label>
-                  <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
+                  <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC/USDT address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
                   <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Currency</label>
                   <select value={withdrawCurrency} onChange={e => setWithdrawCurrency(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
                     <option value="btc">Bitcoin (BTC)</option>
                     <option value="eth">Ethereum (ETH)</option>
-                    <option value="usdc">USDC</option>
+                    <option value="usdc">USDC (ERC-20)</option>
+                    <option value="usdt">USDT (TRC-20)</option>
                   </select>
                 </div>
                 {withdrawMsg && (
@@ -772,6 +876,16 @@ const DashboardPage = () => {
                   <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Update Password</button>
                 </Card>
               </div>
+              {/* ASP Black Card */}
+              <Card title="ASP Black Card">
+                <div className="text-center py-8">
+                  <div className="font-heading text-[1.1rem] text-t1 mb-3">Generate Your Black Card</div>
+                  <p className="font-body text-[0.82rem] text-t3 leading-[1.7] mb-5 max-w-[400px] mx-auto">
+                    Available for Gold tier and ASP Elite members. Generate a downloadable premium membership card.
+                  </p>
+                  <button onClick={generateBlackCard} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px]">Generate Black Card ↓</button>
+                </div>
+              </Card>
             </>
           )}
 
@@ -789,7 +903,7 @@ const DashboardPage = () => {
                   <table className="w-full border-collapse min-w-[600px]">
                     <thead>
                       <tr>
-                        {['#', 'Partner', 'Region', 'Committed', 'Est. Returns', 'Tier'].map(h => (
+                        {['#', 'Partner', 'Region', 'Committed', 'Tier'].map(h => (
                           <th key={h} className="font-label text-[0.58rem] text-t3 tracking-[0.12em] uppercase py-2.5 px-4 text-right first:text-left bg-s2 border-b border-b2">{h}</th>
                         ))}
                       </tr>
@@ -801,7 +915,6 @@ const DashboardPage = () => {
                           <td className="font-body text-[0.78rem] text-t1 py-3 px-4 border-b border-b1 text-right">{p.name}</td>
                           <td className="font-mono text-[0.78rem] text-t2 py-3 px-4 border-b border-b1 text-right">{p.region}</td>
                           <td className="font-mono text-[0.78rem] text-gold py-3 px-4 border-b border-b1 text-right">${p.committed.toLocaleString()}</td>
-                          <td className="font-mono text-[0.78rem] text-asp-green py-3 px-4 border-b border-b1 text-right">${Math.round(p.committed * 1.15).toLocaleString()}</td>
                           <td className="py-3 px-4 border-b border-b1 text-right">
                             <span className={`font-label text-[0.55rem] tracking-[0.1em] uppercase py-0.5 px-2 border ${p.tier === 'Gold' ? 'text-gold border-gold' : p.tier === 'Silver' ? 'text-[#c0c0c0] border-[#c0c0c0]' : 'text-[#cd7f32] border-[#cd7f32]'}`}>{p.tier}</span>
                           </td>
@@ -883,8 +996,6 @@ const DashboardPage = () => {
                 )}
                 <div ref={chatEndRef} />
               </div>
-
-              {/* Suggestion chips */}
               {chatMessages.length <= 1 && (
                 <div className="px-5 pb-3 flex gap-2 flex-wrap">
                   {CHAT_SUGGESTIONS.map((s, i) => (
@@ -895,7 +1006,6 @@ const DashboardPage = () => {
                   ))}
                 </div>
               )}
-
               <div className="py-4 px-5 border-t border-b1 flex gap-3 flex-shrink-0">
                 <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()}
                   placeholder="Ask about funds, returns, strategies..." className="flex-1 bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-2.5 font-body text-[0.85rem] text-t1 outline-none min-h-[44px]" />
@@ -919,9 +1029,8 @@ const DashboardPage = () => {
                     {vaultDocTypes.map(t => <option key={t} value={t}>{t === 'all' ? 'All Types' : t}</option>)}
                   </select>
                 </div>
-
                 {filteredDocs.length === 0 ? (
-                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents yet. Documents are generated automatically as your portfolio grows.</div>
+                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents yet.</div>
                 ) : (
                   <div className="flex flex-col gap-1">
                     {filteredDocs.map((doc, i) => {
@@ -954,11 +1063,17 @@ const DashboardPage = () => {
                 )}
               </Card>
               <Card title="Generate Partner Certificate">
-                <p className="font-body text-[0.85rem] text-t3 leading-[1.75] mb-5">Generate your official Adams Streett Partners membership certificate displaying your tier, partner ID, and membership date.</p>
+                <p className="font-body text-[0.85rem] text-t3 leading-[1.75] mb-5">Generate your official Adams Streett Partners membership certificate.</p>
                 <button className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px]">Generate Certificate</button>
               </Card>
             </>
           )}
+
+          {/* NEW PAGES */}
+          {page === 'membership' && <MembershipPage />}
+          {page === 'academy' && <AcademyPage />}
+          {page === 'affiliate' && <AffiliatePage />}
+          {page === 'sponsored' && <SponsoredListingPage />}
         </div>
       </div>
     </div>

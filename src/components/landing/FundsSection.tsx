@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FUNDS } from '@/data/funds';
+import { FUNDS, SPONSORED_FUNDS } from '@/data/funds';
 
 const riskColors: Record<string, string> = {
   low: 'text-asp-teal border-[hsl(var(--teal))]',
@@ -78,6 +78,7 @@ const FundsSection = () => {
                 <div className="py-[22px] px-6 border-b border-b1">
                   <div className="flex justify-between items-start mb-2">
                     <div className="font-heading text-[0.95rem] text-t1 group-hover:text-gold transition-colors">{fund.name}</div>
+                    {SPONSORED_FUNDS.includes(fund.name) && <span className="font-label text-[0.48rem] text-gold tracking-[0.1em] uppercase border border-gold py-0.5 px-1.5 flex-shrink-0 ml-2">Featured</span>}
                   </div>
                   <div className="flex justify-between items-center gap-2 flex-wrap">
                     <span className="font-label text-[0.52rem] tracking-[0.12em] uppercase py-0.5 px-2 border border-b2 text-t3">{fund.badge}</span>
@@ -92,12 +93,12 @@ const FundsSection = () => {
                   <div className="font-label text-[0.55rem] text-t4 tracking-[0.15em] uppercase mb-1">Target APY</div>
                   <div className="font-mono text-[1.9rem] text-gold tracking-[-0.02em] mb-4">{fund.apy}</div>
                   <div className="flex justify-between py-[7px] border-b border-b1">
-                    <span className="font-body text-[0.72rem] text-t3">$500 → 1 Year</span>
-                    <span className="font-mono text-[0.72rem] text-asp-green">{fund.returns1y}</span>
+                    <span className="font-body text-[0.72rem] text-t3">$500 → 12 Months</span>
+                    <span className="font-mono text-[0.72rem] text-asp-green">${Math.round(500 * 4.2).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between py-[7px] border-b border-b1">
-                    <span className="font-body text-[0.72rem] text-t3">$500 → 3 Years</span>
-                    <span className="font-mono text-[0.72rem] text-asp-green">{fund.returns3y}</span>
+                    <span className="font-body text-[0.72rem] text-t3">$500 → 36 Months</span>
+                    <span className="font-mono text-[0.72rem] text-asp-green">${Math.round(500 * 9.8).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between py-[7px]">
                     <span className="font-body text-[0.72rem] text-t3">Minimum</span>
@@ -106,7 +107,10 @@ const FundsSection = () => {
                 </div>
                 <div className="py-3.5 px-6 border-t border-b1 font-label text-[0.55rem] text-t4 tracking-[0.08em] flex justify-between items-center">
                   <span>{fund.footer}</span>
-                  <span className="text-gold opacity-0 group-hover:opacity-100 transition-opacity">View Fund →</span>
+                  <div className="flex items-center gap-3">
+                    {SPONSORED_FUNDS.includes(fund.name) && <span className="font-mono text-[0.45rem] text-t4">Sponsored</span>}
+                    <span className="text-gold opacity-0 group-hover:opacity-100 transition-opacity">View Fund →</span>
+                  </div>
                 </div>
               </div>
             </div>

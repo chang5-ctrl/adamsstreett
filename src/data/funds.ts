@@ -54,4 +54,30 @@ export const WALLETS = {
   btc: 'bc1qg4pc08qyz0ghvkasqx9d59vv9hn8v8twkzndpw',
   eth: '0xF9Aa56c697AEd09cEb2326edAcD2Cab71a935Ce4',
   usdc: '0xF9Aa56c697AEd09cEb2326edAcD2Cab71a935Ce4',
+  usdt: 'TLBypvwTgU5Wp7wvoEqBZvwtZRr1iKdeT4',
 };
+
+export const RETURN_MULTIPLIERS: Record<string, { cons: number; agg: number }> = {
+  '3': { cons: 1.9 * 0.85, agg: 1.9 },
+  '6': { cons: 2.8 * 0.85, agg: 2.8 },
+  '12': { cons: 4.2 * 0.85, agg: 4.2 },
+  '24': { cons: 6.5 * 0.85, agg: 6.5 },
+  '36': { cons: 9.8 * 0.85, agg: 9.8 },
+  '60': { cons: 18 * 0.85, agg: 18 },
+};
+
+export const SPONSORED_FUNDS = ['Adams Streett General Fund', 'African Unicorn Fund', 'Alpha Fund'];
+
+export const ACADEMY_COURSES = [
+  { id: 'pe-intro', title: 'Introduction to Private Equity', price: 49, duration: '4 hours', desc: 'Learn the fundamentals of private equity investing, deal structures, and due diligence.' },
+  { id: 'crypto-fund', title: 'Crypto Investment Fundamentals', price: 49, duration: '3.5 hours', desc: 'Understand blockchain, DeFi, tokenomics, and crypto portfolio strategies.' },
+  { id: 'wealth', title: 'Wealth Building Strategies', price: 99, duration: '6 hours', desc: 'Master asset allocation, compounding, tax efficiency, and long-term wealth creation.' },
+  { id: 'alt-assets', title: 'Understanding Alternative Assets', price: 79, duration: '5 hours', desc: 'Explore real estate, commodities, art, and other non-traditional investments.' },
+  { id: 'master', title: 'ASP Master Class — Full Portfolio Strategy', price: 199, duration: '10 hours', desc: 'Comprehensive portfolio construction from a team of institutional fund managers.' },
+];
+
+export const AFFILIATE_PARTNERS = [
+  { name: 'Trading Platform A', commission: '40%', desc: 'Leading crypto trading platform with advanced tools and 500+ pairs.' },
+  { name: 'Exchange B', commission: '35%', desc: 'Global digital asset exchange with deep liquidity and institutional grade security.' },
+  { name: 'Tools Platform C', commission: '25%', desc: 'Professional portfolio analytics, tax reporting, and research tools.' },
+];
