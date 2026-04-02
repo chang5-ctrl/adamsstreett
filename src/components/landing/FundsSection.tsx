@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FUNDS } from '@/data/funds';
+import { FUNDS, SPONSORED_FUNDS } from '@/data/funds';
 
 const riskColors: Record<string, string> = {
   low: 'text-asp-teal border-[hsl(var(--teal))]',
