@@ -1072,7 +1072,7 @@ const DashboardPage = () => {
           {/* NEW PAGES */}
           {page === 'membership' && <MembershipPage />}
           {page === 'academy' && <AcademyPage />}
-          {page === 'affiliate' && <AffiliatePage />}
+          {page === 'affiliate' && <ASPNewsPage />}
           {page === 'sponsored' && <SponsoredListingPage />}
         </div>
       </div>
