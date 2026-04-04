@@ -305,27 +305,10 @@ const DashboardPage = () => {
     { name: 'Partner ••1167', region: 'Accra, GH', committed: 280000, tier: 'Bronze' },
   ];
 
-  const vaultDocs = [
-    { name: 'Adams Streett General Fund — Prospectus', type: 'Fund Documents', size: '2.4 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'bronze' },
-    { name: 'African Unicorn Fund — Prospectus', type: 'Fund Documents', size: '3.1 MB', updated: 'Feb 15, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Private Equity Pool — Prospectus', type: 'Fund Documents', size: '2.8 MB', updated: 'Feb 1, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Frontier Fund — Prospectus', type: 'Fund Documents', size: '3.4 MB', updated: 'Jan 20, 2026', isNew: false, tier: 'bronze' },
-    { name: 'DeFi Yield Strategy — Prospectus', type: 'Fund Documents', size: '1.9 MB', updated: 'Jan 15, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Halal Investment Fund — Prospectus', type: 'Fund Documents', size: '2.2 MB', updated: 'Jan 10, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Q1 2026 — Subscription Agreement', type: 'Subscription Agreements', size: '1.2 MB', updated: 'Mar 5, 2026', isNew: true, tier: 'bronze' },
-    { name: 'Q4 2025 — Subscription Agreement', type: 'Subscription Agreements', size: '1.1 MB', updated: 'Dec 28, 2025', isNew: false, tier: 'bronze' },
-    { name: 'March 2026 — NAV Report', type: 'NAV Reports', size: '0.8 MB', updated: 'Mar 8, 2026', isNew: true, tier: 'bronze' },
-    { name: 'February 2026 — NAV Report', type: 'NAV Reports', size: '0.7 MB', updated: 'Feb 28, 2026', isNew: false, tier: 'bronze' },
-    { name: '2025 K-1 Tax Document', type: 'Tax Documents', size: '1.5 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'silver' },
-    { name: '2024 K-1 Tax Document', type: 'Tax Documents', size: '1.3 MB', updated: 'Mar 15, 2025', isNew: false, tier: 'silver' },
-    { name: 'Capital Call Notice — Q2 2026', type: 'Capital Call Notices', size: '0.5 MB', updated: 'Mar 10, 2026', isNew: true, tier: 'bronze' },
-    { name: 'Raw Performance Data — All Funds', type: 'Raw Data', size: '12.4 MB', updated: 'Mar 1, 2026', isNew: false, tier: 'gold' },
-  ];
+  const VAULT_FILTER_TABS = ['all', 'Fund Documents', 'Subscription Agreements', 'NAV Reports', 'Tax Documents', 'Capital Call Notices', 'Raw Data'];
 
-  const vaultDocTypes = ['all', ...new Set(vaultDocs.map(d => d.type))];
-  const filteredDocs = vaultDocs
-    .filter(d => vaultFilter === 'all' || d.type === vaultFilter)
-    .filter(d => !vaultSearch || d.name.toLowerCase().includes(vaultSearch.toLowerCase()));
+  // Empty vault - real documents only generated from user activity
+  const vaultDocs: any[] = [];
 
   const projections = calcProjections();
   const sim = simCalc();
