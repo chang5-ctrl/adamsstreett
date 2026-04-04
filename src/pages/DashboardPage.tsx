@@ -32,7 +32,7 @@ const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: st
   { group: 'Premium', items: [
     { id: 'membership', label: 'Membership', icon: '♦' },
     { id: 'academy', label: 'Academy', icon: '▥' },
-    { id: 'affiliate', label: 'Partners', icon: '⊞' },
+    { id: 'affiliate', label: 'ASP News', icon: '⊞' },
     { id: 'sponsored', label: 'List Fund', icon: '▦' },
   ]},
   { group: 'Community', items: [
