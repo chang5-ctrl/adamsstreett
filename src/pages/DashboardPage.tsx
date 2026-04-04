@@ -12,7 +12,7 @@ const PAGE_TITLES: Record<Page, string> = {
   overview: 'Overview', portfolio: 'Portfolio Analytics', invest: 'New Investment', staking: 'Staking Pools',
   returns: 'Returns Simulator', referral: 'Referral Program', withdraw: 'Withdrawal', profile: 'Partner Profile',
   leaderboard: 'Partner Leaderboard', network: 'Global Network', concierge: 'ASP Intelligence', vault: 'Document Vault',
-  membership: 'Membership', academy: 'ASP Academy', affiliate: 'Affiliate Partners', sponsored: 'List Your Fund',
+  membership: 'Membership', academy: 'ASP Academy', affiliate: 'ASP News', sponsored: 'List Your Fund',
 };
 
 const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: string }[] }[] = [
