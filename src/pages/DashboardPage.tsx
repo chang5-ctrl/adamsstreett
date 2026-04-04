@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FUNDS, WALLETS, RETURN_MULTIPLIERS, SPONSORED_FUNDS } from '@/data/funds';
 import MembershipPage from './MembershipPage';
 import AcademyPage from './AcademyPage';
-import AffiliatePage from './AffiliatePage';
+import ASPNewsPage from './ASPNewsPage';
 import SponsoredListingPage from './SponsoredListingPage';
 
 type Page = 'overview' | 'portfolio' | 'invest' | 'staking' | 'returns' | 'referral' | 'withdraw' | 'profile' | 'leaderboard' | 'network' | 'concierge' | 'vault' | 'membership' | 'academy' | 'affiliate' | 'sponsored';
