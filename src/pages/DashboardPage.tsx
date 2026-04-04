@@ -1016,43 +1016,21 @@ const DashboardPage = () => {
                     <input type="text" value={vaultSearch} onChange={e => setVaultSearch(e.target.value)}
                       placeholder="Search documents..." className="bg-s2 border border-b1 py-2.5 pl-9 pr-4 font-body text-[0.82rem] text-t1 outline-none w-full focus:border-gold transition-colors min-h-[44px]" />
                   </div>
-                  <select value={vaultFilter} onChange={e => setVaultFilter(e.target.value)}
-                    className="bg-s2 border border-b1 py-2.5 px-4 font-label text-[0.62rem] text-t2 tracking-[0.1em] uppercase outline-none cursor-pointer min-h-[44px]">
-                    {vaultDocTypes.map(t => <option key={t} value={t}>{t === 'all' ? 'All Types' : t}</option>)}
-                  </select>
                 </div>
-                {filteredDocs.length === 0 ? (
-                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents yet.</div>
-                ) : (
-                  <div className="flex flex-col gap-1">
-                    {filteredDocs.map((doc, i) => {
-                      const locked = tierOrder[doc.tier as keyof typeof tierOrder] > tierOrder[currentTier as keyof typeof tierOrder];
-                      return (
-                        <div key={i} className={`flex items-center justify-between py-3 px-4 border-b border-b1 last:border-b-0 ${locked ? 'opacity-50' : 'hover:bg-s2'} transition-colors`}>
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="text-lg flex-shrink-0">{locked ? '🔒' : '📄'}</span>
-                            <div className="min-w-0">
-                              <div className="font-body text-[0.82rem] text-t1 truncate flex items-center gap-2">
-                                {doc.name}
-                                {doc.isNew && <span className="font-label text-[0.48rem] text-gold border border-gold py-0 px-1.5 tracking-[0.1em] uppercase flex-shrink-0">New</span>}
-                              </div>
-                              <div className="font-mono text-[0.62rem] text-t4 mt-0.5">
-                                PDF · {doc.size} · Updated {doc.updated}
-                                {locked && <span className="text-asp-amber ml-2">· {doc.tier === 'silver' ? 'Silver' : 'Gold'}+ Only</span>}
-                              </div>
-                            </div>
-                          </div>
-                          {!locked && (
-                            <div className="flex gap-2 flex-shrink-0 ml-3">
-                              <button className="font-label text-[0.52rem] tracking-[0.1em] uppercase text-gold bg-transparent border border-gold py-1 px-3 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[32px]">Download</button>
-                              <button className="font-label text-[0.52rem] tracking-[0.1em] uppercase text-t3 bg-transparent border border-b2 py-1 px-3 cursor-pointer hover:border-b3 transition-all min-h-[32px] max-sm:hidden">Preview</button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                <div className="flex gap-px bg-[hsl(var(--b1))] mb-5 flex-wrap">
+                  {VAULT_FILTER_TABS.map(t => (
+                    <button key={t} onClick={() => setVaultFilter(t)}
+                      className={`font-label text-[0.58rem] tracking-[0.1em] uppercase py-2.5 px-4 cursor-pointer transition-all min-h-[40px] ${vaultFilter === t ? 'bg-gold text-void' : 'bg-s1 text-t3 hover:bg-s2'}`}>
+                      {t === 'all' ? 'All' : t}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center py-12">
+                  <div className="font-heading text-[1.1rem] italic text-t3 mb-4">Your document vault is empty.</div>
+                  <p className="font-body text-[0.82rem] text-t3 leading-[1.8] max-w-[480px] mx-auto">
+                    Documents are generated automatically as your portfolio grows. Confirmed commitments generate investment certificates. Completed staking positions generate yield statements.
+                  </p>
+                </div>
               </Card>
               <Card title="Generate Partner Certificate">
                 <p className="font-body text-[0.85rem] text-t3 leading-[1.75] mb-5">Generate your official Adams Streett Partners membership certificate.</p>
