@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FUNDS, WALLETS, RETURN_MULTIPLIERS, SPONSORED_FUNDS } from '@/data/funds';
 import MembershipPage from './MembershipPage';
 import AcademyPage from './AcademyPage';
-import AffiliatePage from './AffiliatePage';
+import ASPNewsPage from './ASPNewsPage';
 import SponsoredListingPage from './SponsoredListingPage';
 
 type Page = 'overview' | 'portfolio' | 'invest' | 'staking' | 'returns' | 'referral' | 'withdraw' | 'profile' | 'leaderboard' | 'network' | 'concierge' | 'vault' | 'membership' | 'academy' | 'affiliate' | 'sponsored';
@@ -12,7 +12,7 @@ const PAGE_TITLES: Record<Page, string> = {
   overview: 'Overview', portfolio: 'Portfolio Analytics', invest: 'New Investment', staking: 'Staking Pools',
   returns: 'Returns Simulator', referral: 'Referral Program', withdraw: 'Withdrawal', profile: 'Partner Profile',
   leaderboard: 'Partner Leaderboard', network: 'Global Network', concierge: 'ASP Intelligence', vault: 'Document Vault',
-  membership: 'Membership', academy: 'ASP Academy', affiliate: 'Affiliate Partners', sponsored: 'List Your Fund',
+  membership: 'Membership', academy: 'ASP Academy', affiliate: 'ASP News', sponsored: 'List Your Fund',
 };
 
 const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: string }[] }[] = [
@@ -32,7 +32,7 @@ const SIDEBAR_ITEMS: { group: string; items: { id: Page; label: string; icon: st
   { group: 'Premium', items: [
     { id: 'membership', label: 'Membership', icon: '♦' },
     { id: 'academy', label: 'Academy', icon: '▥' },
-    { id: 'affiliate', label: 'Partners', icon: '⊞' },
+    { id: 'affiliate', label: 'ASP News', icon: '⊞' },
     { id: 'sponsored', label: 'List Fund', icon: '▦' },
   ]},
   { group: 'Community', items: [
@@ -305,27 +305,10 @@ const DashboardPage = () => {
     { name: 'Partner ••1167', region: 'Accra, GH', committed: 280000, tier: 'Bronze' },
   ];
 
-  const vaultDocs = [
-    { name: 'Adams Streett General Fund — Prospectus', type: 'Fund Documents', size: '2.4 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'bronze' },
-    { name: 'African Unicorn Fund — Prospectus', type: 'Fund Documents', size: '3.1 MB', updated: 'Feb 15, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Private Equity Pool — Prospectus', type: 'Fund Documents', size: '2.8 MB', updated: 'Feb 1, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Frontier Fund — Prospectus', type: 'Fund Documents', size: '3.4 MB', updated: 'Jan 20, 2026', isNew: false, tier: 'bronze' },
-    { name: 'DeFi Yield Strategy — Prospectus', type: 'Fund Documents', size: '1.9 MB', updated: 'Jan 15, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Halal Investment Fund — Prospectus', type: 'Fund Documents', size: '2.2 MB', updated: 'Jan 10, 2026', isNew: false, tier: 'bronze' },
-    { name: 'Q1 2026 — Subscription Agreement', type: 'Subscription Agreements', size: '1.2 MB', updated: 'Mar 5, 2026', isNew: true, tier: 'bronze' },
-    { name: 'Q4 2025 — Subscription Agreement', type: 'Subscription Agreements', size: '1.1 MB', updated: 'Dec 28, 2025', isNew: false, tier: 'bronze' },
-    { name: 'March 2026 — NAV Report', type: 'NAV Reports', size: '0.8 MB', updated: 'Mar 8, 2026', isNew: true, tier: 'bronze' },
-    { name: 'February 2026 — NAV Report', type: 'NAV Reports', size: '0.7 MB', updated: 'Feb 28, 2026', isNew: false, tier: 'bronze' },
-    { name: '2025 K-1 Tax Document', type: 'Tax Documents', size: '1.5 MB', updated: 'Mar 1, 2026', isNew: true, tier: 'silver' },
-    { name: '2024 K-1 Tax Document', type: 'Tax Documents', size: '1.3 MB', updated: 'Mar 15, 2025', isNew: false, tier: 'silver' },
-    { name: 'Capital Call Notice — Q2 2026', type: 'Capital Call Notices', size: '0.5 MB', updated: 'Mar 10, 2026', isNew: true, tier: 'bronze' },
-    { name: 'Raw Performance Data — All Funds', type: 'Raw Data', size: '12.4 MB', updated: 'Mar 1, 2026', isNew: false, tier: 'gold' },
-  ];
+  const VAULT_FILTER_TABS = ['all', 'Fund Documents', 'Subscription Agreements', 'NAV Reports', 'Tax Documents', 'Capital Call Notices', 'Raw Data'];
 
-  const vaultDocTypes = ['all', ...new Set(vaultDocs.map(d => d.type))];
-  const filteredDocs = vaultDocs
-    .filter(d => vaultFilter === 'all' || d.type === vaultFilter)
-    .filter(d => !vaultSearch || d.name.toLowerCase().includes(vaultSearch.toLowerCase()));
+  // Empty vault - real documents only generated from user activity
+  const vaultDocs: any[] = [];
 
   const projections = calcProjections();
   const sim = simCalc();
@@ -817,13 +800,22 @@ const DashboardPage = () => {
                   <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC/USDT address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
-                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Currency</label>
-                  <select value={withdrawCurrency} onChange={e => setWithdrawCurrency(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                    <option value="btc">Bitcoin (BTC)</option>
-                    <option value="eth">Ethereum (ETH)</option>
-                    <option value="usdc">USDC (ERC-20)</option>
-                    <option value="usdt">USDT (TRC-20)</option>
-                  </select>
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Currency</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'btc', symbol: '₿', name: 'Bitcoin', network: 'BTC Network' },
+                      { id: 'eth', symbol: 'Ξ', name: 'Ethereum', network: 'ETH Network' },
+                      { id: 'usdc', symbol: '◎', name: 'USDC', network: 'ERC-20' },
+                      { id: 'usdt', symbol: 'T', name: 'USDT', network: 'TRC-20' },
+                    ].map(c => (
+                      <div key={c.id} onClick={() => setWithdrawCurrency(c.id)}
+                        className={`bg-s1 border p-4 cursor-pointer transition-all text-center ${withdrawCurrency === c.id ? 'border-gold bg-gold-glow shadow-[0_0_16px_hsl(var(--gold)/0.12)]' : 'border-b1 hover:border-b2'}`}>
+                        <div className="font-heading text-[1.4rem] text-gold mb-1">{c.symbol}</div>
+                        <div className="font-heading text-[0.85rem] text-t1">{c.name}</div>
+                        <div className="font-mono text-[0.55rem] text-t4 mt-0.5">{c.network}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {withdrawMsg && (
                   <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${withdrawMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
@@ -1024,43 +1016,21 @@ const DashboardPage = () => {
                     <input type="text" value={vaultSearch} onChange={e => setVaultSearch(e.target.value)}
                       placeholder="Search documents..." className="bg-s2 border border-b1 py-2.5 pl-9 pr-4 font-body text-[0.82rem] text-t1 outline-none w-full focus:border-gold transition-colors min-h-[44px]" />
                   </div>
-                  <select value={vaultFilter} onChange={e => setVaultFilter(e.target.value)}
-                    className="bg-s2 border border-b1 py-2.5 px-4 font-label text-[0.62rem] text-t2 tracking-[0.1em] uppercase outline-none cursor-pointer min-h-[44px]">
-                    {vaultDocTypes.map(t => <option key={t} value={t}>{t === 'all' ? 'All Types' : t}</option>)}
-                  </select>
                 </div>
-                {filteredDocs.length === 0 ? (
-                  <div className="text-center py-10 font-heading text-base italic text-t3">No documents yet.</div>
-                ) : (
-                  <div className="flex flex-col gap-1">
-                    {filteredDocs.map((doc, i) => {
-                      const locked = tierOrder[doc.tier as keyof typeof tierOrder] > tierOrder[currentTier as keyof typeof tierOrder];
-                      return (
-                        <div key={i} className={`flex items-center justify-between py-3 px-4 border-b border-b1 last:border-b-0 ${locked ? 'opacity-50' : 'hover:bg-s2'} transition-colors`}>
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="text-lg flex-shrink-0">{locked ? '🔒' : '📄'}</span>
-                            <div className="min-w-0">
-                              <div className="font-body text-[0.82rem] text-t1 truncate flex items-center gap-2">
-                                {doc.name}
-                                {doc.isNew && <span className="font-label text-[0.48rem] text-gold border border-gold py-0 px-1.5 tracking-[0.1em] uppercase flex-shrink-0">New</span>}
-                              </div>
-                              <div className="font-mono text-[0.62rem] text-t4 mt-0.5">
-                                PDF · {doc.size} · Updated {doc.updated}
-                                {locked && <span className="text-asp-amber ml-2">· {doc.tier === 'silver' ? 'Silver' : 'Gold'}+ Only</span>}
-                              </div>
-                            </div>
-                          </div>
-                          {!locked && (
-                            <div className="flex gap-2 flex-shrink-0 ml-3">
-                              <button className="font-label text-[0.52rem] tracking-[0.1em] uppercase text-gold bg-transparent border border-gold py-1 px-3 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[32px]">Download</button>
-                              <button className="font-label text-[0.52rem] tracking-[0.1em] uppercase text-t3 bg-transparent border border-b2 py-1 px-3 cursor-pointer hover:border-b3 transition-all min-h-[32px] max-sm:hidden">Preview</button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                <div className="flex gap-px bg-[hsl(var(--b1))] mb-5 flex-wrap">
+                  {VAULT_FILTER_TABS.map(t => (
+                    <button key={t} onClick={() => setVaultFilter(t)}
+                      className={`font-label text-[0.58rem] tracking-[0.1em] uppercase py-2.5 px-4 cursor-pointer transition-all min-h-[40px] ${vaultFilter === t ? 'bg-gold text-void' : 'bg-s1 text-t3 hover:bg-s2'}`}>
+                      {t === 'all' ? 'All' : t}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center py-12">
+                  <div className="font-heading text-[1.1rem] italic text-t3 mb-4">Your document vault is empty.</div>
+                  <p className="font-body text-[0.82rem] text-t3 leading-[1.8] max-w-[480px] mx-auto">
+                    Documents are generated automatically as your portfolio grows. Confirmed commitments generate investment certificates. Completed staking positions generate yield statements.
+                  </p>
+                </div>
               </Card>
               <Card title="Generate Partner Certificate">
                 <p className="font-body text-[0.85rem] text-t3 leading-[1.75] mb-5">Generate your official Adams Streett Partners membership certificate.</p>
@@ -1072,7 +1042,7 @@ const DashboardPage = () => {
           {/* NEW PAGES */}
           {page === 'membership' && <MembershipPage />}
           {page === 'academy' && <AcademyPage />}
-          {page === 'affiliate' && <AffiliatePage />}
+          {page === 'affiliate' && <ASPNewsPage />}
           {page === 'sponsored' && <SponsoredListingPage />}
         </div>
       </div>
