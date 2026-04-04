@@ -817,13 +817,22 @@ const DashboardPage = () => {
                   <input type="text" value={withdrawWallet} onChange={e => setWithdrawWallet(e.target.value)} placeholder="Your BTC/ETH/USDC/USDT address" className="bg-transparent border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full focus:border-b-[hsl(var(--gold))] min-h-[44px]" />
                 </div>
                 <div className="flex flex-col gap-2 mb-5">
-                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Currency</label>
-                  <select value={withdrawCurrency} onChange={e => setWithdrawCurrency(e.target.value)} className="bg-s2 border-none border-b border-b-[hsl(var(--b2))] py-3 font-body text-[0.9rem] text-t1 outline-none w-full cursor-pointer min-h-[44px]">
-                    <option value="btc">Bitcoin (BTC)</option>
-                    <option value="eth">Ethereum (ETH)</option>
-                    <option value="usdc">USDC (ERC-20)</option>
-                    <option value="usdt">USDT (TRC-20)</option>
-                  </select>
+                  <label className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase">Select Currency</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'btc', symbol: '₿', name: 'Bitcoin', network: 'BTC Network' },
+                      { id: 'eth', symbol: 'Ξ', name: 'Ethereum', network: 'ETH Network' },
+                      { id: 'usdc', symbol: '◎', name: 'USDC', network: 'ERC-20' },
+                      { id: 'usdt', symbol: 'T', name: 'USDT', network: 'TRC-20' },
+                    ].map(c => (
+                      <div key={c.id} onClick={() => setWithdrawCurrency(c.id)}
+                        className={`bg-s1 border p-4 cursor-pointer transition-all text-center ${withdrawCurrency === c.id ? 'border-gold bg-gold-glow shadow-[0_0_16px_hsl(var(--gold)/0.12)]' : 'border-b1 hover:border-b2'}`}>
+                        <div className="font-heading text-[1.4rem] text-gold mb-1">{c.symbol}</div>
+                        <div className="font-heading text-[0.85rem] text-t1">{c.name}</div>
+                        <div className="font-mono text-[0.55rem] text-t4 mt-0.5">{c.network}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {withdrawMsg && (
                   <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${withdrawMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]' : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'}`}>
