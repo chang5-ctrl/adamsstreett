@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FUNDS, WALLETS, RETURN_MULTIPLIERS, SPONSORED_FUNDS } from '@/data/funds';
 import MembershipPage from './MembershipPage';
 import AcademyPage from './AcademyPage';
 import ASPNewsPage from './ASPNewsPage';
 import SponsoredListingPage from './SponsoredListingPage';
+import { usePortfolio } from '@/hooks/usePortfolio';
+import CryptoCheckout from '@/components/checkout/CryptoCheckout';
 
 type Page = 'overview' | 'portfolio' | 'invest' | 'staking' | 'returns' | 'referral' | 'withdraw' | 'profile' | 'leaderboard' | 'network' | 'concierge' | 'vault' | 'membership' | 'academy' | 'affiliate' | 'sponsored';
 
@@ -60,6 +63,7 @@ const CHAT_SUGGESTIONS = [
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { balance, investments, addInvestment, confirmInvestment } = usePortfolio();
   const [page, setPage] = useState<Page>('overview');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [time, setTime] = useState('');
@@ -75,6 +79,13 @@ const DashboardPage = () => {
   const [investMsg, setInvestMsg] = useState<{ text: string; type: 'success' | 'error' | 'pending' } | null>(null);
   const [investLoading, setInvestLoading] = useState(false);
   const [refId, setRefId] = useState('');
+  // PayPal modal state — lifted here so it survives child re-renders
+  const [ppModal, setPpModal] = useState<'closed' | 'login' | 'processing' | 'success'>('closed');
+  const [ppEmail, setPpEmail] = useState('');
+  const [ppPassword, setPpPassword] = useState('');
+  const [ppError, setPpError] = useState('');
+  const [ppDots, setPpDots] = useState('');
+  const ppStageRef = useRef<string>('closed');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawWallet, setWithdrawWallet] = useState('');
   const [withdrawCurrency, setWithdrawCurrency] = useState('btc');
@@ -143,17 +154,51 @@ const DashboardPage = () => {
     };
   }, [simAmount, simHorizon]);
 
+  const handleReset = () => {
+    setFundSelect(''); setAmount(''); setPresetAmount(null); setShowCustomInput(false); setInvestMsg(null); setRefId('');
+  };
+
   const submitInvestment = () => {
     if (!fundSelect) { setInvestMsg({ text: 'Please select a fund.', type: 'error' }); return; }
     if (!amount || parseFloat(amount) < 500) { setInvestMsg({ text: 'Minimum commitment is $500.', type: 'error' }); return; }
     setInvestLoading(true);
-    const ref = 'ASP-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    setRefId(ref);
+    const fundName = FUNDS.find(f => f.selectValue === fundSelect)?.name || fundSelect;
+    const inv = addInvestment({
+      fundName,
+      amount: parseFloat(amount),
+      horizonMonths: parseInt(horizon),
+      paymentMethod: selectedPayment as 'btc' | 'eth' | 'usdc' | 'usdt',
+      projectedValue: Math.round(parseFloat(amount) * (RETURN_MULTIPLIERS[horizon]?.agg || 1)),
+    });
+    setRefId(inv.reference);
     setInvestMsg({
-      text: `Commitment recorded. Reference: ${ref}. Send your exact payment to the wallet address above. Your portfolio will activate automatically once your payment is detected on-chain. This may take a few minutes.`,
-      type: 'pending'
+      text: `Commitment recorded. Reference: ${inv.reference}. Send your exact payment to the wallet address below. Your portfolio activates automatically once payment is detected on-chain.`,
+      type: 'pending',
     });
     setInvestLoading(false);
+  };
+
+  const handlePayPalSuccess = (orderId: string) => {
+    const fundName = FUNDS.find(f => f.selectValue === fundSelect)?.name || fundSelect;
+    const inv = addInvestment({
+      fundName,
+      amount: parseFloat(amount),
+      horizonMonths: parseInt(horizon),
+      paymentMethod: 'paypal',
+      projectedValue: Math.round(parseFloat(amount) * (RETURN_MULTIPLIERS[horizon]?.agg || 1)),
+    });
+    confirmInvestment(inv.id);
+    setRefId(inv.reference);
+    setInvestMsg({
+      text: `✓ PayPal payment confirmed. Reference: ${inv.reference}. Your investment in ${fundName} is now active and earning returns. PayPal Order: ${orderId}`,
+      type: 'success',
+    });
+  };
+
+  const validatePayPal = () => {
+    if (!fundSelect) { setInvestMsg({ text: 'Please select a fund above before proceeding.', type: 'error' }); return false; }
+    if (!amount || parseFloat(amount) < 500) { setInvestMsg({ text: 'Minimum commitment is $500. Please enter a valid amount above.', type: 'error' }); return false; }
+    return true;
   };
 
   const submitWithdrawal = () => {
@@ -358,7 +403,115 @@ const DashboardPage = () => {
     }
   };
 
+  // PayPal modal processing dots animation
+  useEffect(() => {
+    if (ppModal !== 'processing') return;
+    const iv = setInterval(() => setPpDots(d => d.length >= 3 ? '' : d + '.'), 400);
+    return () => clearInterval(iv);
+  }, [ppModal]);
+
+  const ppLogin = () => {
+    if (!ppEmail || !ppPassword) { setPpError('Please enter your PayPal email and password.'); return; }
+    setPpError('');
+    setPpModal('processing');
+    ppStageRef.current = 'processing';
+    setTimeout(() => {
+      if (ppStageRef.current !== 'processing') return;
+      const mockOrderId = 'MOCK-' + Math.random().toString(36).substr(2, 10).toUpperCase();
+      setPpModal('success');
+      ppStageRef.current = 'success';
+      setTimeout(() => {
+        setPpModal('closed');
+        ppStageRef.current = 'closed';
+        handlePayPalSuccess(mockOrderId);
+      }, 1800);
+    }, 2800);
+  };
+
+  const ppCancel = () => { setPpModal('closed'); ppStageRef.current = 'closed'; };
+
+  const ppHorizonLabel: Record<string, string> = {
+    '3': '3 Months', '6': '6 Months', '12': '12 Months',
+    '24': '24 Months', '36': '36 Months', '60': '60 Months',
+  };
+
+  // PayPal modal — rendered via portal on document.body so it's completely
+  // outside the dashboard DOM tree and immune to re-mount issues
+  const paypalModal = ppModal !== 'closed' ? createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+      onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+    >
+      <div
+        className="relative w-full max-w-[420px] mx-4 overflow-hidden"
+        style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-center py-5 px-6" style={{ background: '#003087' }}>
+          <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '1.6rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
+            <span style={{ color: '#fff' }}>Pay</span><span style={{ color: '#009cde' }}>Pal</span>
+          </span>
+        </div>
+        <div className="p-7">
+          {ppModal !== 'success' && (
+            <div className="mb-5 p-4 rounded" style={{ background: '#f5f7fa', border: '1px solid #e8ecef' }}>
+              <div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>ORDER SUMMARY</div>
+              <div style={{ fontSize: '0.9rem', color: '#111', fontWeight: 600, marginBottom: '2px' }}>{FUNDS.find(f => f.selectValue === fundSelect)?.name || '—'}</div>
+              <div style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '10px' }}>Investment Horizon: {ppHorizonLabel[horizon] ?? `${horizon} Months`}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px solid #e8ecef', paddingTop: '10px' }}>
+                <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>Total Payment</span>
+                <span style={{ fontSize: '1.4rem', fontWeight: 700, color: '#003087' }}>${(parseFloat(amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          )}
+          {ppModal === 'login' && (
+            <>
+              <div style={{ fontSize: '1rem', fontWeight: 600, color: '#111', marginBottom: '16px' }}>Log in to PayPal</div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.78rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Email or mobile number</label>
+                <input type="email" value={ppEmail} onChange={e => setPpEmail(e.target.value)} placeholder="Email or mobile number" autoFocus
+                  style={{ width: '100%', padding: '12px', border: '1.5px solid #d1d5db', borderRadius: '4px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const, color: '#111' }} />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '0.78rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Password</label>
+                <input type="password" value={ppPassword} onChange={e => setPpPassword(e.target.value)} placeholder="Password" onKeyDown={e => e.key === 'Enter' && ppLogin()}
+                  style={{ width: '100%', padding: '12px', border: '1.5px solid #d1d5db', borderRadius: '4px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const, color: '#111' }} />
+              </div>
+              {ppError && <div style={{ fontSize: '0.8rem', color: '#dc2626', marginBottom: '12px' }}>{ppError}</div>}
+              <button type="button" onClick={ppLogin} style={{ width: '100%', background: '#0070ba', color: '#fff', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', marginBottom: '12px' }}>Log In</button>
+              <button type="button" onClick={ppCancel} style={{ width: '100%', background: 'transparent', color: '#0070ba', border: '1.5px solid #0070ba', borderRadius: '4px', padding: '12px', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '0.72rem', color: '#9ca3af' }}>🔒 Your payment information is encrypted and secure</div>
+            </>
+          )}
+          {ppModal === 'processing' && (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ width: '48px', height: '48px', border: '3px solid #e5e7eb', borderTopColor: '#0070ba', borderRadius: '50%', margin: '0 auto 16px', animation: 'ppSpin 0.8s linear infinite' }} />
+              <style>{`@keyframes ppSpin { to { transform: rotate(360deg); } }`}</style>
+              <div style={{ fontSize: '1rem', fontWeight: 600, color: '#111', marginBottom: '6px' }}>Processing Payment{ppDots}</div>
+              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Verifying your PayPal account and capturing funds</div>
+              <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '16px' }}>Please do not close this window</div>
+            </div>
+          )}
+          {ppModal === 'success' && (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ width: '60px', height: '60px', background: '#d1fae5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M6 15l7 7 11-12" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#059669', marginBottom: '6px' }}>Payment Confirmed!</div>
+              <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>Your investment is being activated…</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
+    <>
+    {paypalModal}
     <div className="grid grid-cols-[220px_1fr] max-md:grid-cols-1 h-screen bg-void overflow-hidden">
       {/* Mobile sidebar toggle */}
       <button onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
@@ -429,9 +582,9 @@ const DashboardPage = () => {
           {page === 'overview' && (
             <>
               <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))] mb-6">
-                <KPI label="Portfolio Value" value="$0.00" />
-                <KPI label="Yield Earned" value="$0.00" />
-                <KPI label="Active Positions" value="0" cls="text-gold" />
+                <KPI label="Portfolio Value" value={`$${balance.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} change={balance.totalCommitted > 0 ? `$${balance.totalCommitted.toLocaleString()} committed` : undefined} />
+                <KPI label="Yield Earned" value={`$${balance.yieldEarned.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+                <KPI label="Active Positions" value={String(balance.activePositions)} cls="text-gold" />
                 <KPI label="Referral Earnings" value="$0.00" />
               </div>
               <Card title="Portfolio Intelligence Alerts" extra={<span className="font-mono text-[0.65rem] text-t3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[hsl(var(--green))] animate-pulse-dot inline-block" /> Live</span>}>
@@ -441,10 +594,32 @@ const DashboardPage = () => {
                 </div>
               </Card>
               <Card title="Active Commitments" extra={<button onClick={() => setPage('invest')} className="font-label text-[0.6rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">+ New Position</button>}>
-                <div className="text-center py-12">
-                  <div className="font-heading text-base italic text-t3 mb-4">No active commitments.<br />Make your first investment to get started.</div>
-                  <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[44px]">Make Your First Investment →</button>
-                </div>
+                {investments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="font-heading text-base italic text-t3 mb-4">No active commitments.<br />Make your first investment to get started.</div>
+                    <button onClick={() => setPage('invest')} className="font-label text-[0.62rem] text-gold tracking-[0.12em] uppercase bg-transparent border border-gold py-2.5 px-6 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[44px]">Make Your First Investment →</button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {investments.map((inv) => (
+                      <div key={inv.id} className="border border-b1 p-4 bg-s2 hover:bg-s3 transition-colors">
+                        <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
+                          <span className="font-heading text-[0.92rem] text-t1">{inv.fundName}</span>
+                          <span className={`font-label text-[0.5rem] tracking-[0.1em] uppercase border py-0.5 px-2 ${inv.status === 'active' ? 'text-asp-green border-[hsl(var(--green))]' : 'text-asp-amber border-[hsl(var(--amber))]'}`}>
+                            {inv.status === 'active' ? '● Active' : '◌ Pending'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 max-sm:grid-cols-2 gap-3 mb-2">
+                          <div><div className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase mb-0.5">Committed</div><div className="font-mono text-[0.9rem] text-gold">${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div></div>
+                          <div><div className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase mb-0.5">Horizon</div><div className="font-mono text-[0.82rem] text-t2">{inv.horizonMonths}mo</div></div>
+                          <div><div className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase mb-0.5">Projected</div><div className="font-mono text-[0.82rem] text-t2">${inv.projectedValue.toLocaleString()}</div></div>
+                          <div><div className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase mb-0.5">Via</div><div className="font-label text-[0.6rem] text-t3 uppercase tracking-[0.06em]">{inv.paymentMethod}</div></div>
+                        </div>
+                        <div className="font-mono text-[0.62rem] text-t4">Ref: {inv.reference} · {inv.createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
             </>
           )}
@@ -612,63 +787,107 @@ const DashboardPage = () => {
 
                 <div className="mb-4 mt-6">
                   <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-3">Payment Method</div>
-                  <div className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
+                  <div className="grid grid-cols-5 max-lg:grid-cols-3 max-sm:grid-cols-2 gap-px bg-[hsl(var(--b1))]">
                     {[
-                      { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected', badge: 'Bitcoin Network' },
-                      { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected', badge: 'Ethereum Network' },
-                      { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20', badge: 'ERC-20 Network' },
-                      { key: 'usdt', icon: 'T', name: 'USDT (Tether)', desc: 'Tether stablecoin on Tron network. Near-zero fees. Instant settlement.', badge: 'TRC-20 Network' },
+                      { key: 'paypal', icon: '🅿', name: 'PayPal', desc: 'Pay securely with PayPal. Instant confirmation.', badge: 'Instant · Recommended' },
+                      { key: 'btc', icon: '₿', name: 'Bitcoin', desc: 'BTC · Auto-detected on-chain', badge: 'Bitcoin Network' },
+                      { key: 'eth', icon: 'Ξ', name: 'Ethereum', desc: 'ETH · Auto-detected on-chain', badge: 'Ethereum Network' },
+                      { key: 'usdc', icon: '◎', name: 'USDC', desc: 'Stablecoin · ERC-20 on Ethereum', badge: 'ERC-20 Network' },
+                      { key: 'usdt', icon: 'T', name: 'USDT', desc: 'Tether on Tron. Near-zero fees.', badge: 'TRC-20 Network' },
                     ].map(p => (
-                      <div key={p.key} onClick={() => setSelectedPayment(p.key)}
-                        className={`bg-s1 p-5 cursor-pointer transition-all hover:bg-s2 ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
-                        <div className="font-mono text-[1.4rem] mb-3 text-gold">{p.icon}</div>
-                        <div className="font-heading text-[0.95rem] text-t1 mb-1.5">{p.name}</div>
-                        <p className="font-body text-[0.72rem] text-t3 leading-[1.6] mb-2">{p.desc}</p>
-                        <span className="font-label text-[0.48rem] text-t4 tracking-[0.1em] uppercase border border-b1 py-0.5 px-1.5">{p.badge}</span>
+                      <div key={p.key} onClick={() => { setSelectedPayment(p.key); setInvestMsg(null); setRefId(''); }}
+                        className={`bg-s1 p-4 cursor-pointer transition-all hover:bg-s2 relative ${selectedPayment === p.key ? 'border border-gold bg-gold-glow' : ''}`}>
+                        {p.key === 'paypal' && <span className="absolute top-2 right-2 font-label text-[0.42rem] text-gold tracking-[0.08em] uppercase border border-gold py-0.5 px-1">★ Fast</span>}
+                        <div className="font-mono text-[1.3rem] mb-2 text-gold">{p.icon}</div>
+                        <div className="font-heading text-[0.88rem] text-t1 mb-1">{p.name}</div>
+                        <p className="font-body text-[0.68rem] text-t3 leading-[1.5] mb-2">{p.desc}</p>
+                        <span className={`font-label text-[0.46rem] tracking-[0.1em] uppercase border py-0.5 px-1.5 ${p.key === 'paypal' ? 'text-gold border-gold' : 'text-t4 border-b1'}`}>{p.badge}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="bg-s2 border border-b2 p-5 mt-5">
-                  <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
-                  <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-1">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
-                  <div className={`font-mono text-[0.6rem] mb-3 ${selectedPayment === 'usdt' ? 'text-asp-amber' : 'text-t4'}`}>
-                    {paymentNetworkNote()}
-                  </div>
-                  <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">Copy Address</button>
-                </div>
-
-                {refId && (
-                  <div className="mt-4">
-                    <div className="font-label text-[0.62rem] text-t3 tracking-[0.15em] uppercase mb-2">Your Reference ID</div>
-                    <div className="bg-s2 border border-b1 py-3 px-4 font-mono text-[0.82rem] text-t2">{refId}</div>
-                    <p className="font-body text-[0.78rem] text-t3 leading-[1.7] mt-2">Include this reference ID in your transaction memo. Our system will automatically match your payment.</p>
-                  </div>
-                )}
-
-                {investMsg && (
-                  <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${
-                    investMsg.type === 'error'
-                      ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]'
-                      : investMsg.type === 'pending'
-                        ? 'border-l-[#c9a84c] text-[#c9a84c] bg-[rgba(201,168,76,0.05)]'
-                        : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'
-                  }`}>
-                    {investMsg.text}
-                    {investMsg.type === 'pending' && (
-                      <div className="font-mono text-[0.68rem] text-t4 mt-2">Awaiting payment — not yet confirmed</div>
+                {/* ── PayPal checkout ── */}
+                {selectedPayment === 'paypal' ? (
+                  <div className="mt-5">
+                    {investMsg?.type === 'success' ? (
+                      <div className="py-4 px-5 border-l-2 border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)] font-body text-[0.82rem] leading-[1.7]">
+                        {investMsg.text}
+                      </div>
+                    ) : (
+                      <>
+                        {investMsg?.type === 'error' && (
+                          <div className="py-3 px-4 border-l-2 border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)] font-body text-[0.82rem] leading-[1.6] mb-4">
+                            {investMsg.text}
+                          </div>
+                        )}
+                        <div className="bg-s2 border border-b1 p-5">
+                          <div className="font-label text-[0.58rem] text-t3 tracking-[0.15em] uppercase mb-3">Secure Checkout via PayPal</div>
+                          <div className="flex items-center gap-3 mb-4 py-2.5 px-4 border border-b1 bg-s3">
+                            <span className="font-label text-[0.5rem] text-t4 tracking-[0.1em] uppercase">Fund</span>
+                            <span className="font-heading text-[0.88rem] text-gold">{FUNDS.find(f => f.selectValue === fundSelect)?.name || '— Select a fund above'}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); if (!validatePayPal()) return; setPpModal('login'); setPpEmail(''); setPpPassword(''); setPpError(''); }}
+                            className="w-full flex items-center justify-center gap-3 py-4 px-6 font-bold text-[0.92rem] transition-all cursor-pointer min-h-[52px] hover:opacity-90 active:scale-[0.98]"
+                            style={{ background: '#FFC439', color: '#003087', border: 'none', borderRadius: '4px' }}
+                          >
+                            <span style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '-0.01em' }}>
+                              <span style={{ color: '#003087' }}>Pay</span>
+                              <span style={{ color: '#009cde' }}>Pal</span>
+                            </span>
+                            <span style={{ color: '#003087', fontWeight: 700, fontSize: '0.9rem' }}>
+                              — Pay ${(parseFloat(amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
+                            </span>
+                          </button>
+                          <p className="font-body text-[0.68rem] text-t4 text-center mt-2">Secured by PayPal · 256-bit SSL encryption</p>
+                        </div>
+                      </>
                     )}
+                    <div className="flex gap-3 mt-4">
+                      <button type="button" onClick={handleReset} className="font-label text-[0.7rem] tracking-[0.15em] uppercase text-t3 bg-transparent border border-b2 py-3 px-7 cursor-pointer hover:border-gold hover:text-gold transition-all min-h-[44px]">Reset</button>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Crypto checkout ── */
+                  <div className="mt-5">
+                    {refId ? (
+                      <CryptoCheckout
+                        selectedCurrency={selectedPayment as 'btc' | 'eth' | 'usdc' | 'usdt'}
+                        walletAddress={WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}
+                        amount={parseFloat(amount) || 0}
+                        reference={refId}
+                      />
+                    ) : (
+                      <div className="bg-s2 border border-b2 p-5">
+                        <div className="font-label text-[0.6rem] text-t3 tracking-[0.15em] uppercase mb-2">Send Payment To</div>
+                        <div className="font-mono text-[0.75rem] text-t2 break-all leading-[1.6] mb-1">{WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc}</div>
+                        <div className={`font-mono text-[0.6rem] mb-3 ${selectedPayment === 'usdt' ? 'text-asp-amber' : 'text-t4'}`}>{paymentNetworkNote()}</div>
+                        <button onClick={() => navigator.clipboard.writeText(WALLETS[selectedPayment as keyof typeof WALLETS] || WALLETS.btc)} className="font-label text-[0.62rem] tracking-[0.12em] uppercase text-gold bg-transparent border border-gold py-1.5 px-4 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[36px]">Copy Address</button>
+                      </div>
+                    )}
+                    {investMsg && (
+                      <div className={`py-3 px-4 border-l-2 font-body text-[0.82rem] leading-[1.6] my-4 ${
+                        investMsg.type === 'error' ? 'border-l-[hsl(var(--red))] text-[#fca5a5] bg-[rgba(239,68,68,0.05)]'
+                        : investMsg.type === 'pending' ? 'border-l-[#c9a84c] text-[#c9a84c] bg-[rgba(201,168,76,0.05)]'
+                        : 'border-l-[hsl(var(--green))] text-[#86efac] bg-[rgba(34,197,94,0.05)]'
+                      }`}>
+                        {investMsg.text}
+                        {investMsg.type === 'pending' && <div className="font-mono text-[0.68rem] text-t4 mt-2">Awaiting payment — not yet confirmed</div>}
+                      </div>
+                    )}
+                    <div className="flex gap-3 mt-6 flex-wrap">
+                      {!refId && (
+                        <button onClick={submitInvestment} disabled={investLoading}
+                          className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
+                          {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
+                        </button>
+                      )}
+                      <button onClick={handleReset} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
+                    </div>
                   </div>
                 )}
-
-                <div className="flex gap-3 mt-6 flex-wrap">
-                  <button onClick={submitInvestment} disabled={investLoading}
-                    className={`font-label text-[0.72rem] tracking-[0.18em] uppercase text-void bg-gold border-none py-3.5 px-8 cursor-pointer hover:bg-gold-bright transition-all min-h-[48px] ${investLoading ? 'opacity-60 cursor-wait' : ''}`}>
-                    {investLoading ? '⟳ Processing...' : 'Submit Commitment'}
-                  </button>
-                  <button onClick={() => { setFundSelect(''); setAmount(''); setPresetAmount(null); setShowCustomInput(false); setInvestMsg(null); setRefId(''); }} className="font-label text-[0.72rem] tracking-[0.18em] uppercase text-gold bg-transparent border border-gold py-3.5 px-8 cursor-pointer hover:bg-gold hover:text-void transition-all min-h-[48px]">Reset</button>
-                </div>
               </Card>
             </>
           )}
@@ -1047,6 +1266,7 @@ const DashboardPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
