@@ -1,6 +1,5 @@
 /**
- * usePortfolio — mock portfolio state management
- * In production: replace with Supabase real-time subscriptions
+to be replace with Supabase real-time subscriptions
  */
 import { useState, useCallback } from 'react';
 
